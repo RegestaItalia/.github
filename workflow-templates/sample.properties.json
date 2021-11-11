@@ -1,0 +1,12 @@
+{
+    "name": "Sample Workflow",
+    "description": "Prova workflow template Github.",
+    "iconName": "sample",
+    "categories": [
+        "JavaScript",
+        "ABAP"
+    ],
+    "filePatterns": [
+        "package.json$"
+    ]
+}
