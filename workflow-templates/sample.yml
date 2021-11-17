@@ -5,7 +5,11 @@ on:
     branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
-
+env:
+  VAR_BOOL: true #Variabile boolean
+  VAR_STR1: esempio #Variabile string 1
+  VAR_STR2: 'esempio' #Variabile string 2
+  VAR_NUMB: 10 #Variabile numero
 jobs:
   build:
     runs-on: ubuntu-latest
