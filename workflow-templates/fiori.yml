@@ -1,0 +1,51 @@
+name: Fiori
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+env:
+  WKF_UIVERI5_TESTS: false #Esegui test UiVeri5
+  WKF_DEPLOY: true #Effettua deploy su OnPremise ABAP
+  APPDIR: app #OPTIONAL Nome directory applicazione
+jobs:
+  buildDeploy:
+    name: Build e deploy RST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app Fiori
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.APPDIR }}
+      - name: Import Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Import registry Regesta
+        uses: ./actions/regesta/regestaRegistry
+        with:
+          path: ./${{ env.APPDIR }}/.npmrc
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+      - run: npm ci
+        working-directory: ./${{ env.APPDIR }}
+      - name: Esecuzione test UiVeri5
+        if: ${{ env.WKF_UIVERI5_TESTS == 'true' }}
+        uses: ./actions/regesta/uiveri5
+        with:
+          repoName: ${{ github.repository }}
+          runId: ${{ github.run_id }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          appDir: ${{ env.APPDIR }}
+      - name: Build
+        run: npm run build
+        working-directory: ./${{ env.APPDIR }}
+      - name: Deploy
+        if: ${{ env.WKF_DEPLOY == 'true' }}
+        run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
+        working-directory: ./${{ env.APPDIR }}
+        env:
+          RST_USR: ${{ secrets.RST_USR }}
+          RST_PWD: ${{ secrets.RST_PWD }}
