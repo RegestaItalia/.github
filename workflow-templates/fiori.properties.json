@@ -1,0 +1,12 @@
+{
+    "name": "Fiori",
+    "description": "Workflow applicazioni Fiori.",
+    "iconName": "sample",
+    "categories": [
+        "JavaScript"
+    ],
+    "filePatterns": [
+        "webapp/manifest.json$",
+        "package.json$"
+    ]
+}
