@@ -1,9 +1,9 @@
 name: Fiori
 on:
   push:
-    branches: [ master ]
+    branches: [ $default-branch ]
   pull_request:
-    branches: [ master ]
+    branches: [ $default-branch ]
   workflow_dispatch:
 env:
   WKF_UIVERI5_TESTS: false #Esegui test UiVeri5
