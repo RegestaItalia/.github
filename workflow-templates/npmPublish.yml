@@ -1,0 +1,52 @@
+name: NPM Publish
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+env:
+  LIBDIR: lib #OPTIONAL Directory libreria
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout extension
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.LIBDIR }}
+      - name: Import Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Confronto versioni
+        id: check
+        uses: ./actions/regesta/versionCheck
+        with:
+          localPackagePath: './${{ env.LIBDIR }}/package.json'
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+      - name: Import registry Regesta
+        if: steps.check.outputs.compare == 1
+        uses: ./actions/regesta/regestaRegistry
+        with:
+          path: ./${{ env.LIBDIR }}/.npmrc
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+      - run: npm ci
+        if: steps.check.outputs.compare == 1
+        working-directory: ./${{ env.LIBDIR }}
+      - name: Publish
+        run: 'npm publish'
+        if: steps.check.outputs.compare == 1
+        working-directory: ./${{ env.LIBDIR }}
+      - name: Crea nuovo tag
+        uses: ncipollo/release-action@v1
+        if: steps.check.outputs.compare == 1
+        with:
+          tag: ${{ steps.check.outputs.localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
