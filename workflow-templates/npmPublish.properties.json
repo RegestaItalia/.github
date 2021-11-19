@@ -1,0 +1,11 @@
+{
+    "name": "NPM Publish",
+    "description": "Pubblica modulo su registry NPM Regesta.",
+    "iconName": "npmPublish",
+    "categories": [
+        "JavaScript"
+    ],
+    "filePatterns": [
+        "package.json$"
+    ]
+}
