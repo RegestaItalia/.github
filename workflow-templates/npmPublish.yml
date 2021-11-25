@@ -1,13 +1,10 @@
 name: NPM Publish
 
 on:
-  push:
-    branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
-
-  workflow_dispatch:
 env:
+  PUBLISH: true #OPTIONAL Pubblica su NPM Registry
   LIBDIR: lib #OPTIONAL Directory libreria
 jobs:
   build:
@@ -41,7 +38,7 @@ jobs:
         working-directory: ./${{ env.LIBDIR }}
       - name: Publish
         run: 'npm publish'
-        if: steps.check.outputs.compare == 1
+        if: steps.check.outputs.compare == 1 && ${{ env.PUBLISH }} === 'true'
         working-directory: ./${{ env.LIBDIR }}
       - name: Crea nuovo tag
         uses: ncipollo/release-action@v1
