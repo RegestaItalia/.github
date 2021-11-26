@@ -1,10 +1,8 @@
 name: Fiori
+
 on:
-  push:
-    branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
-  workflow_dispatch:
 env:
   WKF_UIVERI5_TESTS: false #Esegui test UiVeri5
   WKF_DEPLOY: true #Effettua deploy su OnPremise ABAP
@@ -17,6 +15,7 @@ jobs:
       - name: Checkout app Fiori
         uses: actions/checkout@v2
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           path: ${{ env.APPDIR }}
       - name: Import Regesta Actions
         uses: actions/checkout@v2
@@ -29,10 +28,18 @@ jobs:
         with:
           path: ./${{ env.APPDIR }}/.npmrc
           token: ${{ secrets.CI_GITHUB_TOKEN }}
+      - name: Confronto versioni
+        id: check
+        uses: ./actions/regesta/versionCheck
+        with:
+          localPackagePath: './${{ env.APPDIR }}/package.json'
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
       - run: npm ci
+        if: steps.check.outputs.compare == 1
         working-directory: ./${{ env.APPDIR }}
       - name: Esecuzione test UiVeri5
-        if: ${{ env.WKF_UIVERI5_TESTS == 'true' }}
+        if: steps.check.outputs.compare == 1 && ${{ env.WKF_UIVERI5_TESTS }} == 'true'
         uses: ./actions/regesta/uiveri5
         with:
           repoName: ${{ github.repository }}
@@ -40,12 +47,26 @@ jobs:
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           appDir: ${{ env.APPDIR }}
       - name: Build
+        if: steps.check.outputs.compare == 1 && ${{ env.WKF_DEPLOY }} == 'true'
         run: npm run build
         working-directory: ./${{ env.APPDIR }}
       - name: Deploy
-        if: ${{ env.WKF_DEPLOY == 'true' }}
+        if: steps.check.outputs.compare == 1 && ${{ env.WKF_DEPLOY }} == 'true'
         run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
         working-directory: ./${{ env.APPDIR }}
         env:
           RST_USR: ${{ secrets.RST_USR }}
           RST_PWD: ${{ secrets.RST_PWD }}
+      - uses: 8BitJonny/gh-get-current-pr@1.2.0
+        id: PR
+        with:
+          github-token: ${{ secrets.CI_GITHUB_TOKEN }}
+          sha: ${{ github.event.pull_request.head.sha }}
+      - name: Crea nuova release
+        uses: ncipollo/release-action@v1
+        if: steps.check.outputs.compare == 1
+        with:
+          body: ${{ steps.PR.outputs.pr_body }}
+          tag: ${{ steps.check.outputs.localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
