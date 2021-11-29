@@ -16,18 +16,26 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
+      - name: Is from pull request?
+        uses: 8BitJonny/gh-get-current-pr@1.2.0
+        id: PR
+        with:
+          github-token: ${{ secrets.CI_GITHUB_TOKEN }}
       - name: Checkout app Fiori
+        if: steps.PR.outputs.number == ''
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: ${{ env.APPDIR }}
       - name: Import Regesta Actions
+        if: steps.PR.outputs.number == ''
         uses: actions/checkout@v2
         with:
           repository: RegestaItalia/actions
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
       - name: Confronto versioni
+        if: steps.PR.outputs.number == ''
         id: check
         uses: ./actions/regesta/versionCheck
         with:
@@ -36,7 +44,7 @@ jobs:
           repository: ${{ github.repository }}
       - name: Crea nuova release
         uses: ncipollo/release-action@v1
-        if: steps.check.outputs.compare == 1
+        if: steps.check.outputs.compare == 1 && steps.PR.outputs.number == ''
         with:
           body: First release - v${{ steps.check.outputs.localVersion }}
           tag: ${{ steps.check.outputs.localVersion }}
