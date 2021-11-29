@@ -1,14 +1,47 @@
 name: Fiori
 
 on:
+  push:
+    branches: [ $default-branch ]
   pull_request:
-    branches: [ master ]
+    branches: [ $default-branch ]
     types: [closed]
 env:
   WKF_UIVERI5_TESTS: false #Esegui test UiVeri5
   WKF_DEPLOY: true #Effettua deploy su OnPremise ABAP
   APPDIR: app #OPTIONAL Nome directory applicazione
 jobs:
+  firstRelease:
+    name: First release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app Fiori
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: ${{ env.APPDIR }}
+      - name: Import Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Confronto versioni
+        id: check
+        uses: ./actions/regesta/versionCheck
+        with:
+          localPackagePath: './${{ env.APPDIR }}/package.json'
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+      - name: Crea nuova release
+        uses: ncipollo/release-action@v1
+        if: steps.check.outputs.compare == 1
+        with:
+          body: First release - v${{ steps.check.outputs.localVersion }}
+          tag: ${{ steps.check.outputs.localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
   buildDeploy:
     name: Build e deploy RST
     if: github.event.pull_request.merged == true
