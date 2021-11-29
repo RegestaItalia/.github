@@ -41,7 +41,7 @@ jobs:
         if: steps.check.outputs.compare == 1
         working-directory: ./${{ env.APPDIR }}
       - name: Esecuzione test UiVeri5
-        if: steps.check.outputs.compare == 1 && env.WKF_UIVERI5_TESTS
+        if: steps.check.outputs.compare == 1 && env.WKF_UIVERI5_TESTS == true
         uses: ./actions/regesta/uiveri5
         with:
           repoName: ${{ github.repository }}
@@ -49,11 +49,11 @@ jobs:
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           appDir: ${{ env.APPDIR }}
       - name: Build
-        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY
+        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY == true
         run: npm run build
         working-directory: ./${{ env.APPDIR }}
       - name: Deploy
-        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY
+        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY == true
         run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
         working-directory: ./${{ env.APPDIR }}
         env:
