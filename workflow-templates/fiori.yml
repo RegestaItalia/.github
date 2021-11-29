@@ -2,7 +2,8 @@ name: Fiori
 
 on:
   pull_request:
-    branches: [ $default-branch ]
+    branches: [ master ]
+    types: [closed]
 env:
   WKF_UIVERI5_TESTS: false #Esegui test UiVeri5
   WKF_DEPLOY: true #Effettua deploy su OnPremise ABAP
@@ -10,6 +11,7 @@ env:
 jobs:
   buildDeploy:
     name: Build e deploy RST
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout app Fiori
@@ -39,7 +41,7 @@ jobs:
         if: steps.check.outputs.compare == 1
         working-directory: ./${{ env.APPDIR }}
       - name: Esecuzione test UiVeri5
-        if: steps.check.outputs.compare == 1 && ${{ env.WKF_UIVERI5_TESTS }} == 'true'
+        if: steps.check.outputs.compare == 1 && env.WKF_UIVERI5_TESTS
         uses: ./actions/regesta/uiveri5
         with:
           repoName: ${{ github.repository }}
@@ -47,17 +49,19 @@ jobs:
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           appDir: ${{ env.APPDIR }}
       - name: Build
-        if: steps.check.outputs.compare == 1 && ${{ env.WKF_DEPLOY }} == 'true'
+        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY
         run: npm run build
         working-directory: ./${{ env.APPDIR }}
       - name: Deploy
-        if: steps.check.outputs.compare == 1 && ${{ env.WKF_DEPLOY }} == 'true'
+        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY
         run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
         working-directory: ./${{ env.APPDIR }}
         env:
           RST_USR: ${{ secrets.RST_USR }}
           RST_PWD: ${{ secrets.RST_PWD }}
-      - uses: 8BitJonny/gh-get-current-pr@1.2.0
+      - name: Info Pull Request
+        if: steps.check.outputs.compare == 1
+        uses: 8BitJonny/gh-get-current-pr@1.2.0
         id: PR
         with:
           github-token: ${{ secrets.CI_GITHUB_TOKEN }}
