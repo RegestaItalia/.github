@@ -62,11 +62,13 @@ jobs:
         with:
           script: |
               core.setFailed('Crea nuova versione package! Expected current version ${{ steps.versionCheck.outputs.localVersion }} to be greater then latest available version, ${{ steps.versionCheck.outputs.remoteVersion }}')
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
       - name: Upload artifact
         uses: actions/upload-artifact@master
         with:
           name: checkout
-          path: ./
+          path: checkout.zip
           retention-days: 1
   envToOutput:
     name: Env To Output
@@ -79,6 +81,8 @@ jobs:
         with:
           name: checkout
           path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
       - name: Env To Output
         id: envtooutput
         uses: ./actions/regesta/envToOutput
@@ -94,6 +98,8 @@ jobs:
           with:
             name: checkout
             path: ./
+        - name: Unzip checkout
+          run: unzip checkout.zip
         - name: Build
           run: npm run build
           working-directory: ./${{ env.APP_DIR_NAME }}
@@ -135,6 +141,8 @@ jobs:
         with:
           name: checkout
           path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
       - name: Esecuzione test UiVeri5
         uses: ./actions/regesta/uiveri5
         with:
