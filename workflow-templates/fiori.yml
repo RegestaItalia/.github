@@ -91,8 +91,7 @@ jobs:
   tests:
     name: Esegui tests
     needs: [ checkout, envToOutput ]
-    #fromJson(needs.checkout.outputs.versionCheck).compare == 1 &&
-    if: ${{ always() && contains( fromJson(needs.envToOutput.outputs.vars).TESTS.*.value, true ) }}
+    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 && contains( fromJson(needs.envToOutput.outputs.vars).TESTS.*.value, true ) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@master
