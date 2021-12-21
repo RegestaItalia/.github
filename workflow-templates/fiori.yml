@@ -135,10 +135,10 @@ jobs:
         with:
           name: checkout
           path: ./
-        - name: Esecuzione test UiVeri5
-          uses: ./actions/regesta/uiveri5
-          with:
-            repoName: ${{ github.repository }}
-            runId: ${{ github.run_id }}
-            githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-            APP_DIR_NAME: ${{ env.APP_DIR_NAME }}
+      - name: Esecuzione test UiVeri5
+        uses: ./actions/regesta/uiveri5
+        with:
+          repoName: ${{ github.repository }}
+          runId: ${{ github.run_id }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          APP_DIR_NAME: ${{ env.APP_DIR_NAME }}
