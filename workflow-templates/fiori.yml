@@ -1,66 +1,42 @@
 name: Fiori
-
 on:
   push:
     branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
-    types: [closed]
+    types: [ closed ]
 env:
-  WKF_UIVERI5_TESTS: false #Esegui test UiVeri5
-  WKF_DEPLOY: true #Effettua deploy su OnPremise ABAP
-  APPDIR: app #OPTIONAL Nome directory applicazione
+  TESTS_UIVERI5: false #Esegui test UiVeri5
+  DEPLOY_ONPREMISE: false #Effettua deploy su OnPremise ABAP
+  APP_DIR_NAME: app #OPTIONAL Nome directory applicazione
+  FIRST_RELEASE_BODY: First release #OPTIONAL Body first release
 jobs:
-  firstRelease:
-    name: First release
-    if: github.event_name == 'push'
+  checkPullRequest:
+    name: Check Pull Request
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    outputs:
+      isFromPR: ${{ github.event.pull_request.merged && 'y' || 'n' }}
+      pullRequestBody: ${{ steps.findPr.outputs.body }}
     steps:
-      - name: Is from pull request?
-        uses: 8BitJonny/gh-get-current-pr@1.2.0
-        id: PR
-        with:
-          github-token: ${{ secrets.CI_GITHUB_TOKEN }}
-      - name: Checkout app Fiori
-        if: steps.PR.outputs.number == ''
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: ${{ env.APPDIR }}
-      - name: Import Regesta Actions
-        if: steps.PR.outputs.number == ''
-        uses: actions/checkout@v2
-        with:
-          repository: RegestaItalia/actions
-          token: ${{ secrets.CI_GITHUB_TOKEN }}
-          path: actions/regesta
-      - name: Confronto versioni
-        if: steps.PR.outputs.number == ''
-        id: check
-        uses: ./actions/regesta/versionCheck
-        with:
-          localPackagePath: './${{ env.APPDIR }}/package.json'
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-      - name: Crea nuova release
-        uses: ncipollo/release-action@v1
-        if: steps.check.outputs.compare == 1 && steps.PR.outputs.number == ''
-        with:
-          body: First release - v${{ steps.check.outputs.localVersion }}
-          tag: ${{ steps.check.outputs.localVersion }}
-          token: ${{ secrets.CI_GITHUB_TOKEN }}
-          commit: ${{ github.sha }}
-  buildDeploy:
-    name: Build e deploy RST
-    if: github.event.pull_request.merged == true
+     - name: Trova PR
+       uses: jwalton/gh-find-current-pr@v1
+       id: findPr
+       with:
+        state: closed
+  checkout:
+    name: Checkout
+    needs: [ checkPullRequest ]
     runs-on: ubuntu-latest
+    outputs:
+      versionCheck: ${{ steps.versionCheck.outputs.res }}
     steps:
       - name: Checkout app Fiori
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          path: ${{ env.APPDIR }}
-      - name: Import Regesta Actions
+          path: ${{ env.APP_DIR_NAME }}
+      - name: Checkout Regesta Actions
         uses: actions/checkout@v2
         with:
           repository: RegestaItalia/actions
@@ -69,49 +45,100 @@ jobs:
       - name: Import registry Regesta
         uses: ./actions/regesta/regestaRegistry
         with:
-          path: ./${{ env.APPDIR }}/.npmrc
+          path: ./${{ env.APP_DIR_NAME }}/.npmrc
           token: ${{ secrets.CI_GITHUB_TOKEN }}
+      - run: npm ci
+          working-directory: ./${{ env.APP_DIR_NAME }} 
       - name: Confronto versioni
-        id: check
+        id: versionCheck
         uses: ./actions/regesta/versionCheck
         with:
-          localPackagePath: './${{ env.APPDIR }}/package.json'
+          localPackagePath: ./${{ env.APP_DIR_NAME }}/package.json
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-      - run: npm ci
-        if: steps.check.outputs.compare == 1
-        working-directory: ./${{ env.APPDIR }}
-      - name: Esecuzione test UiVeri5
-        if: steps.check.outputs.compare == 1 && env.WKF_UIVERI5_TESTS == true
-        uses: ./actions/regesta/uiveri5
+      - name: Check incremento versione
+        if: needs.checkPullRequest.outputs.isFromPR == 'y' && steps.versionCheck.outputs.compare < 1
+        uses: actions/github-script@v3
         with:
-          repoName: ${{ github.repository }}
-          runId: ${{ github.run_id }}
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-          appDir: ${{ env.APPDIR }}
-      - name: Build
-        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY == true
-        run: npm run build
-        working-directory: ./${{ env.APPDIR }}
-      - name: Deploy
-        if: steps.check.outputs.compare == 1 && env.WKF_DEPLOY == true
-        run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
-        working-directory: ./${{ env.APPDIR }}
-        env:
-          RST_USR: ${{ secrets.RST_USR }}
-          RST_PWD: ${{ secrets.RST_PWD }}
-      - name: Info Pull Request
-        if: steps.check.outputs.compare == 1
-        uses: 8BitJonny/gh-get-current-pr@1.2.0
-        id: PR
+          script: |
+              core.setFailed('Crea nuova versione package! Expected current version ${{ steps.versionCheck.outputs.localVersion }} to be greater then latest available version, ${{ steps.versionCheck.outputs.remoteVersion }}')
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
         with:
-          github-token: ${{ secrets.CI_GITHUB_TOKEN }}
-          sha: ${{ github.event.pull_request.head.sha }}
-      - name: Crea nuova release
+          name: checkout
+          path: ./
+          retention-days: 1
+  envToOutput:
+    name: Env To Output
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      vars: ${{ steps.envtooutput.outputs.vars }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Env To Output
+        id: envtooutput
+        uses: ./actions/regesta/envToOutput
+        with:
+          yamlFilePath: ./${{ env.APP_DIR_NAME }}/.github/workflows/fiori.yml
+  deploy:
+      name: Deploy OnPremise
+      needs: [ checkout, envToOutput, checkPullRequest ]
+      if: fromJson(needs.checkout.outputs.versionCheck).compare == 1 && fromJson(needs.envToOutput.outputs.vars).DEPLOY_ONPREMISE == true
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/download-artifact@master
+          with:
+            name: checkout
+            path: ./
+        - name: Build
+          run: npm run build
+          working-directory: ./${{ env.APP_DIR_NAME }}
+        - name: Deploy
+          run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
+          working-directory: ./${{ env.APP_DIR_NAME }}
+          env:
+            RST_USR: ${{ secrets.RST_USR }}
+            RST_PWD: ${{ secrets.RST_PWD }}
+  createRelease:
+    name: Create release
+    runs-on: ubuntu-latest
+    needs: [ checkPullRequest, checkout, envToOutput, deploy ]
+    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 && ( contains( fromJson(needs.envToOutput.outputs.vars).DEPLOY.*.value, true ) && needs.deploy.result == 'success' || true ) }}
+    steps:
+      - name: Crea first release
         uses: ncipollo/release-action@v1
-        if: steps.check.outputs.compare == 1
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount == 0 && needs.checkPullRequest.outputs.isFromPR == 'n'
         with:
-          body: ${{ steps.PR.outputs.pr_body }}
-          tag: ${{ steps.check.outputs.localVersion }}
+          body: ${{ env.FIRST_RELEASE_BODY }} - v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
+      - name: Crea nuova release
+        uses: ncipollo/release-action@v1
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount > 0 && needs.checkPullRequest.outputs.isFromPR == 'y'
+        with:
+          body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.pullRequestBody }}
+          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
+  tests:
+    name: UiVeri5
+    needs: [ checkout, envToOutput ]
+    if: fromJson(needs.checkout.outputs.versionCheck).compare == 1 && fromJson(needs.envToOutput.outputs.vars).TESTS_UIVERI5 == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+        - name: Esecuzione test UiVeri5
+          uses: ./actions/regesta/uiveri5
+          with:
+            repoName: ${{ github.repository }}
+            runId: ${{ github.run_id }}
+            githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+            APP_DIR_NAME: ${{ env.APP_DIR_NAME }}
