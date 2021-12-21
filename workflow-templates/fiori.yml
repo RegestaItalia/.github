@@ -88,10 +88,31 @@ jobs:
         uses: ./actions/regesta/envToOutput
         with:
           yamlFilePath: ./${{ env.APP_DIR_NAME }}/.github/workflows/fiori.yml
+  tests:
+    name: Esegui tests
+    needs: [ checkout, envToOutput ]
+    #fromJson(needs.checkout.outputs.versionCheck).compare == 1 &&
+    if: ${{ always() && contains( fromJson(needs.envToOutput.outputs.vars).TESTS.*.value, true ) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Esecuzione test UiVeri5
+        uses: ./actions/regesta/uiveri5
+        if: fromJson(needs.envToOutput.outputs.vars).TESTS_UIVERI5 == true
+        with:
+          repoName: ${{ github.repository }}
+          runId: ${{ github.run_id }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          appDir: ${{ env.APP_DIR_NAME }}
   deploy:
-      name: Deploy OnPremise
-      needs: [ checkout, envToOutput, checkPullRequest ]
-      if: fromJson(needs.checkout.outputs.versionCheck).compare == 1 && fromJson(needs.envToOutput.outputs.vars).DEPLOY_ONPREMISE == true
+      name: Deploy
+      needs: [ checkout, envToOutput, checkPullRequest, tests ]
+      if: ${{ fromJson(needs.checkout.outputs.versionCheck).compare == 1 && contains( fromJson(needs.envToOutput.outputs.vars).DEPLOY.*.value, true ) && ( contains( fromJson(needs.envToOutput.outputs.vars).TESTS.*.value, true ) && needs.tests.result == 'success' || true ) }}
       runs-on: ubuntu-latest
       steps:
         - uses: actions/download-artifact@master
@@ -103,17 +124,18 @@ jobs:
         - name: Build
           run: npm run build
           working-directory: ./${{ env.APP_DIR_NAME }}
-        - name: Deploy
+        - name: Deploy OnPremise
           run: npx fiori deploy -u ${{ secrets.RST_ENDPOINT }} --username RST_USR --password RST_PWD -l ${{ secrets.RST_CLIENT }} -y -f 
           working-directory: ./${{ env.APP_DIR_NAME }}
+          if: fromJson(needs.envToOutput.outputs.vars).DEPLOY_ONPREMISE == true
           env:
             RST_USR: ${{ secrets.RST_USR }}
             RST_PWD: ${{ secrets.RST_PWD }}
   createRelease:
     name: Create release
     runs-on: ubuntu-latest
-    needs: [ checkPullRequest, checkout, envToOutput, deploy ]
-    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 && ( contains( fromJson(needs.envToOutput.outputs.vars).DEPLOY.*.value, true ) && needs.deploy.result == 'success' || true ) }}
+    needs: [ checkPullRequest, checkout, envToOutput, deploy, tests ]
+    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 && ( contains( fromJson(needs.envToOutput.outputs.vars).DEPLOY.*.value, true ) && needs.deploy.result == 'success' || true ) && ( contains( fromJson(needs.envToOutput.outputs.vars).TESTS.*.value, true ) && needs.tests.result == 'success' || true ) }}
     steps:
       - name: Crea first release
         uses: ncipollo/release-action@v1
@@ -131,22 +153,3 @@ jobs:
           tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
-  tests:
-    name: UiVeri5
-    needs: [ checkout, envToOutput ]
-    if: fromJson(needs.checkout.outputs.versionCheck).compare == 1 && fromJson(needs.envToOutput.outputs.vars).TESTS_UIVERI5 == true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@master
-        with:
-          name: checkout
-          path: ./
-      - name: Unzip checkout
-        run: unzip checkout.zip
-      - name: Esecuzione test UiVeri5
-        uses: ./actions/regesta/uiveri5
-        with:
-          repoName: ${{ github.repository }}
-          runId: ${{ github.run_id }}
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-          APP_DIR_NAME: ${{ env.APP_DIR_NAME }}
