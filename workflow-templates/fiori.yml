@@ -48,7 +48,7 @@ jobs:
           path: ./${{ env.APP_DIR_NAME }}/.npmrc
           token: ${{ secrets.CI_GITHUB_TOKEN }}
       - run: npm ci
-          working-directory: ./${{ env.APP_DIR_NAME }} 
+        working-directory: ./${{ env.APP_DIR_NAME }} 
       - name: Confronto versioni
         id: versionCheck
         uses: ./actions/regesta/versionCheck
