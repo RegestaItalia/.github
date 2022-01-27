@@ -1,48 +1,108 @@
 name: NPM Publish
-
 on:
+  push:
+    branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
+    types: [ closed ]
 env:
-  LIBDIR: lib #OPTIONAL Directory libreria
+  FIRST_RELEASE_BODY: First release #OPTIONAL Body first release
+  LIB_DIR_NAME: app #OPTIONAL Nome directory libreria
+  TEMPLATE: npmPublish #Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
-  build:
+  checkPullRequest:
+    name: Check Pull Request
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    outputs:
+      isFromPR: ${{ github.event.pull_request.merged && 'y' || 'n' }}
+      pullRequestBody: ${{ steps.findPr.outputs.body }}
     steps:
-      - name: Checkout extension
+     - name: Trova PR
+       uses: jwalton/gh-find-current-pr@v1
+       id: findPr
+       with:
+        state: closed
+  checkout:
+    name: Checkout
+    needs: [ checkPullRequest ]
+    runs-on: ubuntu-latest
+    outputs:
+      versionCheck: ${{ steps.versionCheck.outputs.res }}
+    steps:
+      - name: Checkout app Fiori
         uses: actions/checkout@v2
         with:
-          path: ${{ env.LIBDIR }}
-      - name: Import Regesta Actions
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: ${{ env.LIB_DIR_NAME }}
+      - name: Checkout Regesta Actions
         uses: actions/checkout@v2
         with:
           repository: RegestaItalia/actions
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
-      - name: Confronto versioni
-        id: check
-        uses: ./actions/regesta/versionCheck
-        with:
-          localPackagePath: './${{ env.LIBDIR }}/package.json'
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
       - name: Import registry Regesta
-        if: steps.check.outputs.compare == 1
         uses: ./actions/regesta/regestaRegistry
         with:
-          path: ./${{ env.LIBDIR }}/.npmrc
+          path: ./${{ env.LIB_DIR_NAME }}/.npmrc
           token: ${{ secrets.CI_GITHUB_TOKEN }}
       - run: npm ci
-        if: steps.check.outputs.compare == 1
-        working-directory: ./${{ env.LIBDIR }}
-      - name: Publish
-        run: 'npm publish'
-        if: steps.check.outputs.compare == 1
-        working-directory: ./${{ env.LIBDIR }}
-      - name: Crea nuovo tag
-        uses: ncipollo/release-action@v1
-        if: steps.check.outputs.compare == 1
+        working-directory: ./${{ env.LIB_DIR_NAME }} 
+      - name: Confronto versioni
+        id: versionCheck
+        uses: ./actions/regesta/versionCheck
         with:
-          tag: ${{ steps.check.outputs.localVersion }}
+          localPackagePath: ./${{ env.LIB_DIR_NAME }}/package.json
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+      - name: Check incremento versione
+        if: needs.checkPullRequest.outputs.isFromPR == 'y' && steps.versionCheck.outputs.compare < 1
+        uses: actions/github-script@v3
+        with:
+          script: |
+              core.setFailed('Crea nuova versione package! Expected current version ${{ steps.versionCheck.outputs.localVersion }} to be greater then latest available version, ${{ steps.versionCheck.outputs.remoteVersion }}')
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  publish:
+      name: Publish
+      needs: [ checkout, checkPullRequest ]
+      if: ${{ fromJson(needs.checkout.outputs.versionCheck).compare == 1 }}
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/download-artifact@master
+          with:
+            name: checkout
+            path: ./
+        - name: Unzip checkout
+          run: unzip checkout.zip
+        - name: Publish Regesta Registry
+          run: npm publish
+          working-directory: ./${{ env.LIB_DIR_NAME }}
+  createRelease:
+    name: Create release
+    runs-on: ubuntu-latest
+    needs: [ checkPullRequest, checkout, publish ]
+    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 && needs.publish.result == 'success' || true }}
+    steps:
+      - name: Crea first release
+        uses: ncipollo/release-action@v1
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount == 0 && needs.checkPullRequest.outputs.isFromPR == 'n'
+        with:
+          body: ${{ env.FIRST_RELEASE_BODY }} - v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
+      - name: Crea nuova release
+        uses: ncipollo/release-action@v1
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount > 0 && needs.checkPullRequest.outputs.isFromPR == 'y'
+        with:
+          body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.pullRequestBody }}
+          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
