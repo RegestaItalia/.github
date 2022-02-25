@@ -3,5 +3,10 @@ Questo archivio contiene i sorgenti di tutti i progetti Regesta Dev, sia libreri
 
 ## Nomenclatura repository
 I repository devono essere denominati seguendo questa convenzione:
-- Librerie Regesta: **regesta.[nome_framework].[nome_libreria]**
-- Software clienti: **[nome_cliente].[nome_modulo/cross].[nome_progetto].[nome_app]**
+- Software clienti: **[nome_cliente].[modulo].[nome_progetto].[nome_app o libreria]**
+- Prodotti Regesta: **regesta.[modulo].[nome_progetto].[nome_app o libreria]**
+- Librerie Regesta: **regesta.framework.[nome_libreria]**
+- Progetti di test: **test.[utente].[nome_progetto]**
+
+
+
