@@ -10,7 +10,7 @@ env:
   DEPLOY_ONPREMISE: false #Effettua deploy su OnPremise ABAP
   APP_DIR_NAME: app #OPTIONAL Nome directory applicazione
   FIRST_RELEASE_BODY: First release #OPTIONAL Body first release
-  TEMPLATE: fiori #Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
+  TEMPLATE: fiori #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
   checkPullRequest:
     name: Check Pull Request
