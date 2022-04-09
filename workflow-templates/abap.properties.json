@@ -1,0 +1,11 @@
+{
+    "name": "ABAP Package",
+    "description": "Workflow package ABAP.",
+    "iconName": "fiori",
+    "categories": [
+        "ABAP"
+    ],
+    "filePatterns": [
+        ".abapgit.xml$"
+    ]
+}
