@@ -1,0 +1,77 @@
+name: ABAP Package
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+    types: [ closed ]
+env:
+  FIND_ISSUES: true #Trova commenti TODO e apri issue
+  ABAPGIT_DIR_NAME: abapgit #OPTIONAL Nome directory abapgit
+  TEMPLATE: abap #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
+jobs:
+  checkPullRequest:
+    name: Check Pull Request
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    outputs:
+      isFromPR: ${{ github.event.pull_request.merged && 'y' || 'n' }}
+      pullRequestBody: ${{ steps.findPr.outputs.body }}
+    steps:
+     - name: Trova PR
+       uses: jwalton/gh-find-current-pr@v1
+       id: findPr
+       with:
+        state: closed
+  checkout:
+    name: Checkout
+    needs: [ checkPullRequest ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout package ABAP
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: ${{ env.ABAPGIT_DIR_NAME }}
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  envToOutput:
+    name: Env To Output
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      vars: ${{ steps.envtooutput.outputs.vars }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Env To Output
+        id: envtooutput
+        uses: ./actions/regesta/envToOutput
+        with:
+          yamlFilePath: ./${{ env.ABAPGIT_DIR_NAME }}/.github/workflows/abap.yml
+  findIssues:
+    name: Find TODO issues
+    needs: [ checkout, envToOutput ]
+    if: ${{ fromJson(needs.envToOutput.outputs.vars).FIND_ISSUES == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: alstr/todo-to-issue-action@v4.6.3
+        with:
+          TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+          CLOSE_ISSUES: true
