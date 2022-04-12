@@ -6,7 +6,9 @@ on:
     branches: [ $default-branch ]
     types: [ closed ]
 env:
+  PACKAGE_NAME: ZPACKAGE #Nome package
   FIND_ISSUES: true #Trova commenti TODO e apri issue
+  UPDATE_SYSTEMS: true #Installa/Aggiorna su sistemi TODO
   ABAPGIT_DIR_NAME: abapgit #OPTIONAL Nome directory abapgit
   TEMPLATE: abap #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
@@ -75,3 +77,22 @@ jobs:
         with:
           TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
           CLOSE_ISSUES: true
+  updateSystems:
+    name: Update systems
+    needs: [ checkout, envToOutput ]
+    if: ${{ fromJson(needs.envToOutput.outputs.vars).UPDATE_SYSTEMS == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Update systems
+        id: envtooutput
+        uses: ./actions/regesta/updateAbapPackage
+        with:
+          repository: ${{ github.repository }}
+          packageName: ${{ env.PACKAGE_NAME }}
+          defaultBranch: master
