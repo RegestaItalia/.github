@@ -7,9 +7,13 @@ on:
     types: [ closed ]
 env:
   PACKAGE_NAME: ZPACKAGE #Nome package
-  FIND_ISSUES: true #Trova commenti TODO e apri issue
   UPDATE_SYSTEMS: true #Installa/Aggiorna su sistemi TODO
+  CREATE_TR_DESC: Reg - Import ZPACKAGE #Descrizione CR install
+  UPDATE_TR_DESC: Reg - Update ZPACKAGE #Descrizione CR update
+  LANG: E #OPTIONAL Lingua sviluppi
   ABAPGIT_DIR_NAME: abapgit #OPTIONAL Nome directory abapgit
+  WRITE_PROTECTED: false #Write Protected
+  FIND_ISSUES: true #OPTIONAL Trova commenti TODO e apri issue
   TEMPLATE: abap #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
   checkPullRequest:
