@@ -38,14 +38,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: RegestaItalia/actions
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
       - name: Confronto versioni
         id: versionCheck
         uses: ./actions/regesta/versionCheck
         with:
           localApackPath: ./${{ env.REPO_DIR_NAME }}/.apack-manifest.xml
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           repository: ${{ github.repository }}
       - name: Check incremento versione
         if: needs.checkPullRequest.outputs.isFromPR == 'y' && steps.versionCheck.outputs.compare < 1
@@ -91,7 +91,7 @@ jobs:
         with:
           body: ${{ github.event.head_commit.message }}    v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
           tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
       - name: Crea release (da PR)
         uses: ncipollo/release-action@v1
@@ -99,5 +99,5 @@ jobs:
         with:
           body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.pullRequestBody }}
           tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
