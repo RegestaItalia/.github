@@ -1,0 +1,103 @@
+name: RegRepo
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+    types: [ closed ]
+env:
+  REPO_DIR_NAME: regrepo #HIDDEN Nome directory
+  TEMPLATE: fiori #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
+jobs:
+  checkPullRequest:
+    name: Check Pull Request
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    outputs:
+      isFromPR: ${{ github.event.pull_request.merged && 'y' || 'n' }}
+      pullRequestBody: ${{ steps.findPr.outputs.body }}
+    steps:
+     - name: Trova PR
+       uses: jwalton/gh-find-current-pr@v1
+       id: findPr
+       with:
+        state: closed
+  checkout:
+    name: Checkout
+    needs: [ checkPullRequest ]
+    runs-on: ubuntu-latest
+    outputs:
+      versionCheck: ${{ steps.versionCheck.outputs.res }}
+    steps:
+      - name: Checkout app Fiori
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: ${{ env.REPO_DIR_NAME }}
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Confronto versioni
+        id: versionCheck
+        uses: ./actions/regesta/versionCheck
+        with:
+          localPackagePath: ./${{ env.APP_DIR_NAME }}/package.json
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+      - name: Check incremento versione
+        if: needs.checkPullRequest.outputs.isFromPR == 'y' && steps.versionCheck.outputs.compare < 1
+        uses: actions/github-script@v3
+        with:
+          script: |
+              core.setFailed('Crea nuova versione! Expected current version ${{ steps.versionCheck.outputs.localVersion }} to be greater then latest available version, ${{ steps.versionCheck.outputs.remoteVersion }}')
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  envToOutput:
+    name: Env To Output
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      vars: ${{ steps.envtooutput.outputs.vars }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Env To Output
+        id: envtooutput
+        uses: ./actions/regesta/envToOutput
+        with:
+          yamlFilePath: ./${{ env.REPO_DIR_NAME }}/.github/workflows/regrepo.yml
+  createRelease:
+    name: Create release
+    runs-on: ubuntu-latest
+    needs: [ checkPullRequest, checkout, envToOutput ]
+    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 }}
+    steps:
+      - name: Crea release
+        uses: ncipollo/release-action@v1
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount >= 0
+        with:
+          body: ${{ github.event.head_commit.message }}    v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
+      - name: Crea release (da PR)
+        uses: ncipollo/release-action@v1
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount > 0 && needs.checkPullRequest.outputs.isFromPR == 'y'
+        with:
+          body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.pullRequestBody }}
+          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commit: ${{ github.sha }}
