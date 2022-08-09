@@ -44,7 +44,7 @@ jobs:
         id: versionCheck
         uses: ./actions/regesta/versionCheck
         with:
-          localPackagePath: ./${{ env.APP_DIR_NAME }}/package.json
+          localApackPath: ./${{ env.REPO_DIR_NAME }}/.apack-manifest.xml
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           repository: ${{ github.repository }}
       - name: Check incremento versione
