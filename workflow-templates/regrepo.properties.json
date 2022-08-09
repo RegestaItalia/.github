@@ -1,0 +1,10 @@
+{
+    "name": "RegRepo",
+    "description": "Workflow RegRepo.",
+    "iconName": "regrepo",
+    "categories": [],
+    "filePatterns": [
+        ".regabapgit/*",
+        ".abapgit.xml"
+    ]
+}
