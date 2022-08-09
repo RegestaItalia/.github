@@ -29,7 +29,7 @@ jobs:
     outputs:
       versionCheck: ${{ steps.versionCheck.outputs.res }}
     steps:
-      - name: Checkout app Fiori
+      - name: Checkout RegRepo
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
