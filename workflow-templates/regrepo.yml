@@ -7,7 +7,7 @@ on:
     types: [ closed ]
 env:
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
-  TEMPLATE: fiori #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
+  TEMPLATE: regrepo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
   checkPullRequest:
     name: Check Pull Request
