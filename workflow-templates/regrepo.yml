@@ -2,9 +2,6 @@ name: RegRepo
 on:
   push:
     branches: [ $default-branch ]
-  pull_request:
-    branches: [ $default-branch ]
-    types: [ closed ]
 env:
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
   TEMPLATE: regrepo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
@@ -12,16 +9,14 @@ jobs:
   checkPullRequest:
     name: Check Pull Request
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'push'
     outputs:
-      isFromPR: ${{ github.event.pull_request.merged && 'y' || 'n' }}
-      pullRequestBody: ${{ steps.findPr.outputs.body }}
+      body: ${{ steps.findPr.outputs.body }}
     steps:
      - name: Trova PR
-       uses: jwalton/gh-find-current-pr@v1
+       uses: actions-ecosystem/action-get-merged-pull-request@main
        id: findPr
        with:
-        state: closed
+        github_token: ${{ secrets.CI_GITHUB_TOKEN }}
   checkout:
     name: Checkout
     needs: [ checkPullRequest ]
@@ -48,7 +43,7 @@ jobs:
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           repository: ${{ github.repository }}
       - name: Check incremento versione
-        if: needs.checkPullRequest.outputs.isFromPR == 'y' && steps.versionCheck.outputs.compare < 1
+        if: steps.versionCheck.outputs.compare < 1
         uses: actions/github-script@v3
         with:
           script: |
@@ -79,25 +74,53 @@ jobs:
         uses: ./actions/regesta/envToOutput
         with:
           yamlFilePath: ./${{ env.REPO_DIR_NAME }}/.github/workflows/regrepo.yml
+  readDotRegrepo:
+    name: Read .regrepo
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      vars: ${{ steps.dotregrepo.outputs.vars }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Read .regrepo
+        id: dotregrepo
+        uses: ./actions/regesta/regGit/readDotRegRepo
+        with:
+          filePath: ./${{ env.REPO_DIR_NAME }}/.regrepo/.regrepo.xml
   createRelease:
     name: Create release
     runs-on: ubuntu-latest
-    needs: [ checkPullRequest, checkout, envToOutput ]
-    if: ${{ always() && fromJson(needs.checkout.outputs.versionCheck).compare == 1 }}
+    needs: [ checkPullRequest, checkout, envToOutput, readDotRegrepo ]
+    if: ${{ fromJson(needs.checkout.outputs.versionCheck).compare == 1 }}
     steps:
-      - name: Crea release
-        uses: ncipollo/release-action@v1
-        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount >= 0
+      - uses: actions/download-artifact@master
         with:
-          body: ${{ github.event.head_commit.message }}    v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
-          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
-          token: ${{ secrets.CI_GITHUB_TOKEN }}
-          commit: ${{ github.sha }}
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Crea transport
+        id: generateRelease
+        uses: ./actions/regesta/regGit/generateRegRepoRelease
+        with:
+          releasePath: ./${{ env.REPO_DIR_NAME }}
+          username: ${{ secrets.RST_USER }}
+          password: ${{ secrets.RST_PASSWORD }}
+          artifactId: ${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT_ID }}
+          targetSystem: ${{ fromJson(needs.readDotRegrepo.outputs.vars).TARGET_SYSTEM }}
+          package: ${{ fromJson(needs.readDotRegrepo.outputs.vars).PACKAGE_NAME }}
+          version: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
       - name: Crea release (da PR)
         uses: ncipollo/release-action@v1
-        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount > 0 && needs.checkPullRequest.outputs.isFromPR == 'y'
+        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount > 0
         with:
-          body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.pullRequestBody }}
+          body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.body }}
           tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
+          artifacts: ./${{ env.REPO_DIR_NAME }}/${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT_ID }}.zip
