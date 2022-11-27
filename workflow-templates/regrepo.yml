@@ -111,16 +111,14 @@ jobs:
           releasePath: ./${{ env.REPO_DIR_NAME }}
           username: ${{ secrets.RST_USER }}
           password: ${{ secrets.RST_PASSWORD }}
-          artifactId: ${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT_ID }}
-          targetSystem: ${{ fromJson(needs.readDotRegrepo.outputs.vars).TARGET_SYSTEM }}
-          package: ${{ fromJson(needs.readDotRegrepo.outputs.vars).PACKAGE_NAME }}
+          artifactId: ${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT }}
+          package: ${{ fromJson(needs.readDotRegrepo.outputs.vars).MAIN_PACKAGE.ORIGINAL_PACKAGE_NAME }}
           version: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
-      - name: Crea release (da PR)
+      - name: Crea release
         uses: ncipollo/release-action@v1
-        if: fromJson(needs.checkout.outputs.versionCheck).releaseCount > 0
         with:
           body: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}\n${{ needs.checkPullRequest.outputs.body }}
           tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
-          artifacts: ./${{ env.REPO_DIR_NAME }}/${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT_ID }}.zip
+          artifacts: ${{ steps.generateRelease.outputs.releasePath }}
