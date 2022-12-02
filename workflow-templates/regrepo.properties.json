@@ -4,7 +4,7 @@
     "iconName": "regrepo",
     "categories": [],
     "filePatterns": [
-        ".regabapgit/*",
+        ".regrepo/*",
         ".abapgit.xml"
     ]
 }
