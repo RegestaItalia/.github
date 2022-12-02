@@ -70,9 +70,7 @@ jobs:
       - name: update changelog
         uses: ./actions/regesta/regGit/updateChangelog
         with:
-          repoPath: /${{ env.REPO_DIR_NAME }}
           artifact: ${{ github.event.repository.name }}
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           clearTemplate: true
   alignAfterPr:
     name: Align after PR
