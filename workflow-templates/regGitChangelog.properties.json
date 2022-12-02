@@ -1,0 +1,10 @@
+{
+    "name": "RegGit Changelog",
+    "description": "Aggiorna changelog a chiusura issue",
+    "iconName": "regrepo",
+    "categories": [],
+    "filePatterns": [
+        ".regrepo/*",
+        ".abapgit.xml"
+    ]
+}
