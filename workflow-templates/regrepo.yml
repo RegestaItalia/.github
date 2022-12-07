@@ -1,7 +1,7 @@
 name: RegRepo
 on:
   push:
-    branches: [ $default-branch ]
+    branches: [ master ]
 env:
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
   TEMPLATE: regrepo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
@@ -70,6 +70,7 @@ jobs:
       - name: update changelog
         uses: ./actions/regesta/regGit/updateChangelog
         with:
+		  githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           artifact: ${{ github.event.repository.name }}
           clearTemplate: true
   alignAfterPr:
