@@ -70,7 +70,7 @@ jobs:
       - name: update changelog
         uses: ./actions/regesta/regGit/updateChangelog
         with:
-		  githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+ 	  githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           artifact: ${{ github.event.repository.name }}
           clearTemplate: true
   alignAfterPr:
