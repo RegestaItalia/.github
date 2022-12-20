@@ -1,0 +1,10 @@
+{
+    "name": "What's New",
+    "description": "Invia email What's New",
+    "iconName": "whatsnew",
+    "categories": [abap],
+    "filePatterns": [
+        ".regrepo/*",
+        ".abapgit.xml"
+    ]
+}
