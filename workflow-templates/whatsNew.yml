@@ -48,6 +48,7 @@ jobs:
           event: ${{ toJSON(github.event) }}
       - name: Send email
         uses: ./actions/regesta/gsuite/sendEmail
+        if: (steps.generateTexts.outputs.generated == true)
         with:
           senderEmail: ${{ secrets.GMAIL_USER }}
           senderPassword: ${{ secrets.GMAIL_PASSWORD }}
