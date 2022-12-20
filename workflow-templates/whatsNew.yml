@@ -1,0 +1,56 @@
+name: What's New
+on:
+  release:
+    types: [ published ]
+  discussion:
+    types: [ created ]
+env:
+  RECIPIENTS: #Destinatari separati da virgola
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RegRepo
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: repo
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  sendEmail:
+    name: Send Email
+    runs-on: ubuntu-latest
+    needs: [ checkout ]
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Generate texts
+        id: generateTexts
+        uses: ./actions/regesta/generateWhatsNewTexts
+        with:
+          event: ${{ toJSON(github.event) }}
+      - name: Send email
+        uses: ./actions/regesta/gsuite/sendEmail
+        with:
+          senderEmail: ${{ secrets.GMAIL_USER }}
+          senderPassword: ${{ secrets.GMAIL_PASSWORD }}
+          recipients: ${{ env.RECIPIENTS }}
+          subject: ${{ steps.generateTexts.outputs.subject }}
+          body: ${{ steps.generateTexts.outputs.body }}
