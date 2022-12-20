@@ -2,7 +2,7 @@
     "name": "RegGit Changelog",
     "description": "Aggiorna changelog a chiusura issue",
     "iconName": "regrepo",
-    "categories": [],
+    "categories": [abap],
     "filePatterns": [
         ".regrepo/*",
         ".abapgit.xml"
