@@ -1,7 +1,7 @@
 name: RegRepo
 on:
   push:
-    branches: [ master, main ]
+    branches: [ master ]
 env:
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
   TEMPLATE: regrepo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
