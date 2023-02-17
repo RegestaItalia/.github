@@ -1,0 +1,83 @@
+name: 📝 Feature request
+description: Feature request
+title: "[Feature]: "
+labels: ["feature", "triage"]
+body:
+- type: textarea
+  id: feature
+  attributes:
+   label: Descrizione feature
+   placeholder: Descrivere la feature richiesta
+  validations:
+    required: true
+- type: textarea
+  id: scenario
+  attributes:
+    label: Descrizione scenario
+    placeholder: Descrivere lo scenario d'uso della feature
+  validations:
+    required: true
+- type: textarea
+  id: given
+  attributes:
+    label: Given
+    placeholder: Descrivere le precondizioni
+  validations:
+    required: false
+- type: textarea
+  id: when
+  attributes:
+    label: When
+    placeholder: Descrivere l'evento trigger
+  validations:
+    required: false
+- type: textarea
+  id: then
+  attributes:
+    label: Then
+    placeholder: Descrivere le postcondizioni
+  validations:
+    required: false
+- type: textarea
+  id: notes
+  attributes:
+    label: Note
+    placeholder: Inserire eventuali note
+  validations:
+    required: false
+- type: textarea
+  id: test-cases
+  attributes:
+    label: Casi di test
+    placeholder: Inserire i riferimenti ai casi di test
+  validations:
+    required: true
+- type: checkboxes
+  id: specs-completed
+  attributes:
+    label: La specifica è completa e compresa in ogni dettaglio?
+    options:
+      - label: La specifica è completa e compresa in ogni dettaglio?
+        required: false
+- type: checkboxes
+  id: test-case
+  attributes:
+    label: È stato fornito almeno un caso di test?
+    options:
+      - label: È stato fornito almeno un caso di test?
+        required: false
+- type: checkboxes
+  id: smoke-test
+  attributes:
+    label: Smoke-test eseguito con successo?
+    description: I test sui casi forniti sono stati superati?
+    options:
+      - label: Smoke-test eseguito con successo?
+        required: false
+- type: checkboxes
+  id: qly-deploy
+  attributes:
+    label: Feature deployata nell'ambiente di test?
+    options:
+      - label: Feature deployata nell'ambiente di test?
+        required: false
