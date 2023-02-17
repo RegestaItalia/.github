@@ -6,20 +6,8 @@ env:
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
   TEMPLATE: regrepo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
-  checkPullRequest:
-    name: Check Pull Request
-    runs-on: ubuntu-latest
-    outputs:
-      body: ${{ steps.findPr.outputs.body }}
-    steps:
-     - name: Trova PR
-       uses: actions-ecosystem/action-get-merged-pull-request@main
-       id: findPr
-       with:
-        github_token: ${{ secrets.CI_GITHUB_TOKEN }}
   checkout:
     name: Checkout
-    needs: [ checkPullRequest ]
     runs-on: ubuntu-latest
     outputs:
       versionCheck: ${{ steps.versionCheck.outputs.res }}
@@ -35,19 +23,6 @@ jobs:
           repository: RegestaItalia/actions
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
-      - name: Confronto versioni
-        id: versionCheck
-        uses: ./actions/regesta/versionCheck
-        with:
-          localApackPath: ./${{ env.REPO_DIR_NAME }}/.apack-manifest.xml
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-      - name: Check incremento versione
-        if: steps.versionCheck.outputs.compare < 1
-        uses: actions/github-script@v3
-        with:
-          script: |
-              core.setFailed('Crea nuova versione! Expected current version ${{ steps.versionCheck.outputs.localVersion }} to be greater then latest available version, ${{ steps.versionCheck.outputs.remoteVersion }}')
       - name: Zip artifact checkout
         run: zip checkout.zip ./* -r
       - name: Upload artifact
@@ -56,27 +31,10 @@ jobs:
           name: checkout
           path: checkout.zip
           retention-days: 1
-  updateChangelog:
-    name: Update changelog
-    runs-on: ubuntu-latest
-    needs: checkout
-    steps:
-      - uses: actions/download-artifact@master
-        with:
-          name: checkout
-          path: ./
-      - name: Unzip checkout
-        run: unzip checkout.zip
-      - name: update changelog
-        uses: ./actions/regesta/regGit/updateChangelog
-        with:
-          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
-          artifact: ${{ github.event.repository.name }}
-          clearTemplate: true
   alignAfterPr:
     name: Align after PR
     runs-on: ubuntu-latest
-    needs: updateChangelog
+    needs: checkout
     steps:
       - uses: actions/download-artifact@master
         with:
@@ -89,6 +47,26 @@ jobs:
         with:
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
           repoName: ${{ github.event.repository.name }}
+  checkPullRequest:
+    name: Check Pull Request
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      vars: ${{ steps.prData.outputs.vars }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Get pr data
+        uses: ./actions/regesta/regGit/pullRequestData
+        id: prData
+        with:
+          repoName: ${{ github.event.repository.full_name }}
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          commitSha: ${{ github.sha }}
   envToOutput:
     name: Env To Output
     runs-on: ubuntu-latest
@@ -128,8 +106,8 @@ jobs:
   createRelease:
     name: Create release
     runs-on: ubuntu-latest
-    needs: [ checkPullRequest, checkout, envToOutput, readDotRegrepo ]
-    if: ${{ fromJson(needs.checkout.outputs.versionCheck).compare == 1 }}
+    needs: [ checkPullRequest, envToOutput, readDotRegrepo ]
+    if: ${{ fromJson(needs.checkPullRequest.outputs.vars).generateRelease == true }}
     steps:
       - uses: actions/download-artifact@master
         with:
@@ -146,19 +124,12 @@ jobs:
           password: ${{ secrets.RST_PASSWORD }}
           artifactId: ${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT }}
           package: ${{ fromJson(needs.readDotRegrepo.outputs.vars).MAIN_PACKAGE.ORIGINAL_PACKAGE_NAME }}
-          version: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
-      - name: PR body replace
-        id: prBodyReplace
-        uses: mad9000/actions-find-and-replace-string@2
-        with:
-          source: ${{ needs.checkPullRequest.outputs.body }}
-          find: 'vLATEST'
-          replace: v${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          version: ${{ fromJson(needs.checkPullRequest.outputs.vars).version }}
       - name: Crea release
         uses: ncipollo/release-action@v1
         with:
-          body: ${{ steps.prBodyReplace.outputs.value }}
-          tag: ${{ fromJson(needs.checkout.outputs.versionCheck).localVersion }}
+          body: ${{ fromJson(needs.checkPullRequest.outputs.vars).releaseBody }}
+          tag: ${{ fromJson(needs.checkPullRequest.outputs.vars).version }}
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           commit: ${{ github.sha }}
           artifacts: ${{ steps.generateRelease.outputs.releasePath }}
