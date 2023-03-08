@@ -124,6 +124,7 @@ jobs:
           password: ${{ secrets.RST_PASSWORD }}
           artifactId: ${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT }}
           package: ${{ fromJson(needs.readDotRegrepo.outputs.vars).MAIN_PACKAGE.ORIGINAL_PACKAGE_NAME }}
+          system: ${{ fromJson(needs.readDotRegrepo.outputs.vars).MAIN_PACKAGE.SYSTEM.NAME }}
           version: ${{ fromJson(needs.checkPullRequest.outputs.vars).version }}
       - name: Crea release
         uses: ncipollo/release-action@v1
