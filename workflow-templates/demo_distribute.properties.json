@@ -1,0 +1,11 @@
+{
+    "name": "Demo distribute",
+    "description": "Distribute",
+    "iconName": "fiori",
+    "categories": [
+        "ABAP"
+    ],
+    "filePatterns": [
+        ".abapgit.xml$"
+    ]
+}
