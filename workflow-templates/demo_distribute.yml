@@ -4,7 +4,7 @@ on:
     types: [ published ]
 env:
   SYSTEM_NAME: REPLACESYSNAME #System (RFC/BTP Proxy)
-  TARGET_SYSTEM: REPLACETARGETSYS #TMS: System Name
+  TARGET_SYSTEM: REPLACETARGETSYS #TMS System Name
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
   TEMPLATE: demo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
 jobs:
