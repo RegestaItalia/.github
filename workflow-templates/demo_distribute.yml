@@ -4,7 +4,6 @@ on:
     types: [ published ]
 env:
   SYSTEM_NAME: REPLACESYSNAME #System (RFC/BTP Proxy)
-  TARGET_SYSTEM: REPLACETARGETSYS #TMS System Name
   TARGET_DEVCLASS: REPLACETARGETDC #Target Devclass
   REPO_DIR_NAME: regrepo #HIDDEN Nome directory
   TEMPLATE: demo #HIDDEN Elimina questa variabile se si vogliono mantenere modifiche a job a fronte di update al template
@@ -90,4 +89,4 @@ jobs:
           artifactId: ${{ fromJson(needs.readDotRegrepo.outputs.vars).ARTIFACT }}
           tag: ${{ github.event.release.tag_name }}
           systemName: ${{ fromJson(needs.envToOutput.outputs.vars).SYSTEM_NAME }}
-          systemTarget: ${{ fromJson(needs.envToOutput.outputs.vars).TARGET_SYSTEM }}
+          targetPackage: ${{ fromJson(needs.envToOutput.outputs.vars).TARGET_DEVCLASS }}
