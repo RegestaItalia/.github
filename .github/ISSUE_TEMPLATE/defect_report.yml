@@ -1,0 +1,110 @@
+name: 📝 Defect Report
+description: Defect Report
+title: "[Difetto]: "
+labels: ["bug", "triage"]
+body:
+- type: dropdown
+  id: category
+  attributes:
+    label: Categoria difetto
+    description: Classificare il difetto secondo la categoria più affine
+    options:
+      - Comunicazione con l'utente inefficace/insufficiente
+      - Configurabilità mancante
+      - Controllo input utente insufficiente
+      - Funzionalità assente
+      - Funzionalità errata
+      - Funzionalità incompleta
+      - Interazione utente complessa/poco intuitiva
+      - Lentezza in particolari condizioni di utilizzo
+      - Lentezza sotto le principali condizioni di utilizzo
+      - Malfunzionamento in casi limite
+  validations:
+    required: true
+- type: textarea
+  id: what-happened
+  attributes:
+   label: Descrizione difetto
+   placeholder: Descrivere sinteticamente il difetto riscontrato
+  validations:
+    required: true
+- type: textarea
+  id: what-expected
+  attributes:
+    label: Risultato atteso
+    placeholder: Descrivere sinteticamente il risultato atteso
+  validations:
+    required: true
+- type: textarea
+  id: what-actual
+  attributes:
+    label: Risultato ottenuto
+    placeholder: Descrivere sinteticamente il risultato ottenuto
+  validations:
+    required: true
+- type: textarea
+  id: test-cases
+  attributes:
+    label: Casi di test
+    placeholder: Inserire i riferimenti ai casi di test
+  validations:
+    required: true
+- type: input
+  id: time-to-find-it-out
+  attributes:
+    label: Ore richieste per individuare il difetto
+    description: Segnalare indicativamente il numero di ore richieste per individuare il difetto
+  validations:
+    required: false
+- type: input
+  id: time-to-fix
+  attributes:
+    label: Ore richieste per risolvere il difetto
+    description: Segnalare indicativamente il numero di ore richieste per risolvere il difetto
+  validations:
+    required: false  
+- type: checkboxes
+  id: customer-report
+  attributes:
+    label: Difetto segnalato dal cliente?
+    description: Indicare se il difetto è stato segnalato dal cliente (oppure intercettato da un test interno)
+    options:
+      - label: Difetto segnalato dal cliente?
+        required: false
+- type: checkboxes
+  id: regression
+  attributes:
+    label: Difetto già individuato e risolto in passato?
+    description: Indicare se il difetto era già stato individuato e risolto in passato
+    options:
+      - label: Difetto già individuato e risolto in passato?
+        required: false
+- type: checkboxes
+  id: specs-completed
+  attributes:
+    label: La specifica è completa e compresa in ogni dettaglio?
+    options:
+      - label: La specifica è completa e compresa in ogni dettaglio?
+        required: false
+- type: checkboxes
+  id: test-case
+  attributes:
+    label: È stato fornito almeno un caso di test?
+    options:
+      - label: È stato fornito almeno un caso di test?
+        required: false
+- type: checkboxes
+  id: smoke-test
+  attributes:
+    label: Smoke-test eseguito con successo?
+    description: I test sui casi forniti sono stati superati?
+    options:
+      - label: Smoke-test eseguito con successo?
+        required: false
+- type: checkboxes
+  id: qly-deploy
+  attributes:
+    label: Fix deployata nell'ambiente di test?
+    options:
+      - label: Fix deployata nell'ambiente di test?
+        required: false
