@@ -57,7 +57,7 @@ body:
   attributes:
     label: La specifica è completa e compresa in ogni dettaglio?
     options:
-      - label: La specifica è completa e compresa in ogni dettaglio?
+      - label: La specifica è completa e compresa in ogni dettaglio
         required: false
 - type: checkboxes
   id: test-case
