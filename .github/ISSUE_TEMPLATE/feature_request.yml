@@ -64,7 +64,7 @@ body:
   attributes:
     label: È stato fornito almeno un caso di test?
     options:
-      - label: È stato fornito almeno un caso di test?
+      - label: È stato fornito almeno un caso di test
         required: false
 - type: checkboxes
   id: smoke-test
@@ -72,12 +72,12 @@ body:
     label: Smoke-test eseguito con successo?
     description: I test sui casi forniti sono stati superati?
     options:
-      - label: Smoke-test eseguito con successo?
+      - label: Smoke-test eseguito con successo
         required: false
 - type: checkboxes
   id: qly-deploy
   attributes:
     label: Feature deployata nell'ambiente di test?
     options:
-      - label: Feature deployata nell'ambiente di test?
+      - label: Feature deployata nell'ambiente di test
         required: false
