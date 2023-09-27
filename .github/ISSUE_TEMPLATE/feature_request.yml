@@ -16,7 +16,7 @@ body:
     label: Descrizione scenario
     placeholder: Descrivere lo scenario d'uso della feature
   validations:
-    required: true
+    required: false
 - type: textarea
   id: given
   attributes:
