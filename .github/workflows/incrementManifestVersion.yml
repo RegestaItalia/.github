@@ -1,0 +1,82 @@
+name: Increment manifest version (based on Pull request naming convention)
+on:
+  workflow_call:
+    inputs:
+      prTitle:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+      ref:
+        required: true
+        type: string
+    secrets:
+      CI_GITHUB_TOKEN:
+        required: true
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RegRepo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          path: repo
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  incrementVersion:
+    name: Extract manifest values
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      version: ${{ steps.incrementVersion.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Increment version
+        id: incrementVersion
+        uses: ./actions/regesta/booster/incrementVersion
+        with:
+          version: ${{ inputs.version }}
+          prTitle: ${{ inputs.prTitle }}
+  commitChanges:
+    name: Commit manifest.json changes
+    runs-on: ubuntu-latest
+    needs: [ checkout, incrementVersion ]
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Update manifest values
+        with:
+          repoName: ${{ inputs.repository }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+          manifestPath: 'manifest.json'
+          propertyName: 'prVersion'
+          propertyValue: ${{ steps.incrementVersion.outputs.version }}
+          branch: ${{ inputs.ref }}
