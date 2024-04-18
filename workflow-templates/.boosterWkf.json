@@ -1,7 +1,9 @@
-[{
-  "name": "ABAP",
-  "template": {
-    "prerelease": "abapCreatePreRelease",
-    "movetorelease": "abapMoveToRelease"
+[
+  {
+    "name": "ABAP",
+    "template": {
+      "prerelease": "abapCreatePreRelease",
+      "movetorelease": "abapMoveToRelease"
+    }
   }
-}]
+]
