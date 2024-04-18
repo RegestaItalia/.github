@@ -1,0 +1,125 @@
+name: Booster Workflow (generic)
+on:
+  workflow_call:
+    inputs:
+      config:
+        required: true
+        type: string
+      vars:
+        required: true
+        type: string
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RegRepo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+          path: repo
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  readConfig:
+    name: Read config
+    runs-on: ubuntu-latest
+    needs: [checkout]
+    outputs:
+      prerelease: ${{ steps.readConfig.outputs.prerelease }}
+      movetorelease: ${{ steps.readConfig.outputs.movetorelease }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Read config
+        id: readConfig
+        uses: ./actions/regesta/booster/readRepoWkfConfig
+        with:
+          repoName: ${{ github.repository }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+  getSapSourceSystem:
+    name: Read SAP Source System
+    runs-on: ubuntu-latest
+    if: ${{ fromJson(inputs.vars).SYSTEM_ID != '' }}
+    outputs:
+      name: ${{ steps.name.outputs.out }}
+      publicApiUrl: ${{ steps.publicApiUrl.outputs.out }}
+      publicApiPort: ${{ steps.publicApiPort.outputs.out }}
+      publicDeployPort: ${{ steps.publicDeployPort.outputs.out }}
+      client: ${{ steps.client.outputs.out }}
+      username: ${{ steps.username.outputs.out }}
+      trTarget: ${{ steps.trTarget.outputs.out }}
+      dest: ${{ steps.dest.outputs.out }}
+      asHost: ${{ steps.asHost.outputs.out }}
+      sysNr: ${{ steps.sysNr.outputs.out }}
+      sapRouter: ${{ steps.sapRouter.outputs.out }}
+      lang: ${{ steps.lang.outputs.out }}
+    steps:
+      - id: name
+        run: echo "out=${{ fromJson(inputs.vars).SYSTEM_ID }}" >> "$GITHUB_OUTPUT"
+      - id: publicApiUrl
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_PUBLICURL', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: publicApiPort
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_PUBLICAPIPORT', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: publicDeployPort
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_PUBLICDEPLOYPORT', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: client
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_CLIENT', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: username
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_USER', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: trTarget
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_TRTARGET', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: dest
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_DEST', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: asHost
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_ASHOST', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: sysNr
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_SYSNR', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: sapRouter
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_SAPROUTER', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: lang
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_LANG', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+  abapCreatePreRelease:
+    needs: [readConfig, getSapSourceSystem]
+    if: ${{ github.event.workflow == '.github/workflows/createPreRelease.yml' && needs.readConfig.outputs.prerelease == 'abapCreatePreRelease' }}
+    uses: ./.github/workflows/abapCreatePreRelease.yml
+    with:
+      systemId: ${{ needs.getSapSourceSystem.outputs.name }}
+      publicApiUrl: ${{ needs.getSapSourceSystem.outputs.publicApiUrl }}
+      publicApiPort: ${{ needs.getSapSourceSystem.outputs.publicApiPort }}
+      publicDeployPort: ${{ needs.getSapSourceSystem.outputs.publicDeployPort }}
+      client: ${{ needs.getSapSourceSystem.outputs.client }}
+      username: ${{ needs.getSapSourceSystem.outputs.username }}
+      trTarget: ${{ needs.getSapSourceSystem.outputs.trTarget }}
+      stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
+      devclass: ${{ fromJson(inputs.vars).DEVCLASS }}
+      dest: ${{ needs.getSapSourceSystem.outputs.dest }}
+      asHost: ${{ needs.getSapSourceSystem.outputs.asHost }}
+      sysNr: ${{ needs.getSapSourceSystem.outputs.sysNr }}
+      sapRouter: ${{ needs.getSapSourceSystem.outputs.sapRouter }}
+      lang: ${{ needs.getSapSourceSystem.outputs.lang }}
+    secrets: inherit
+  abapMoveToRelease:
+    needs: [readConfig]
+    if: ${{ github.event.workflow == '.github/workflows/moveToRelease.yml' && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
+    uses: ./.github/workflows/abapMoveToRelease.yml
+    with:
+      stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
+    secrets: inherit

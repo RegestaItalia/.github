@@ -1,0 +1,50 @@
+name: Move to release registry
+on:
+  workflow_call:
+    inputs:
+      stagingRegistryEndpoint:
+        required: true
+        type: string
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    outputs:
+      packageName: ${{steps.manifest.outputs.packageName}}
+      packageVersion: ${{steps.manifest.outputs.packageVersion}}
+    steps:
+      - name: Checkout RegRepo
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: repo
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+      - name: Read manifest
+        id: manifest
+        uses: ./actions/regesta/booster/readManifest
+        with:
+          manifestPath: ./repo/manifest.json
+  trmPublish:
+    name: TRM Publish (Release Registry)
+    needs: [checkout]
+    runs-on: ubuntu-latest
+    steps:
+      - name: API call
+        uses: dkershner6/post-api-call-action@v2
+        with:
+          url: ${{ inputs.stagingRegistryEndpoint }}/moveToProd
+          headers: "{\"Authorization\": \"token ${{ secrets.TRM_TOKEN }}\"}"
+          params: "{\"package\": \"${{needs.checkout.outputs.packageName}}\", \"version\": \"${{needs.checkout.outputs.packageVersion}}\"}"

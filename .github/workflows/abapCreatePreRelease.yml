@@ -1,0 +1,166 @@
+name: Create pre-release
+on:
+    workflow_call:
+      inputs:
+        systemId:
+          required: true
+          type: string
+        publicApiUrl:
+          required: true
+          type: string
+        publicApiPort:
+          required: true
+          type: string
+        publicDeployPort:
+          required: true
+          type: string
+        client:
+          required: true
+          type: string
+        username:
+          required: true
+          type: string
+        trTarget:
+          required: true
+          type: string
+        stagingRegistryEndpoint:
+          required: true
+          type: string
+        devclass:
+          required: true
+          type: string
+        dest:
+          required: true
+          type: string
+        asHost:
+          required: true
+          type: string
+        sysNr:
+          required: true
+          type: string
+        sapRouter:
+          required: true
+          type: string
+        lang:
+          required: true
+          type: string
+        skipDependencies:
+          required: false
+          type: boolean
+        releaseTimeout:
+          required: false
+          type: number
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RegRepo
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: repo
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout
+          path: checkout.zip
+          retention-days: 1
+  listFioriApps:
+    name: List Fiori apps
+    runs-on: ubuntu-latest
+    needs: checkout
+    outputs:
+      matrix: ${{ steps.listFolders.outputs.jsonMatrix }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: List fiori apps
+        id: listFolders
+        uses: ./actions/regesta/booster/getFioriMatrix
+  deployFioriApps:
+    name: Deploy Fiori app
+    needs: listFioriApps
+    if: ${{ needs.listFioriApps.outputs.matrix != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: ${{ fromJson(needs.listFioriApps.outputs.matrix) }}
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Deploy fiori app
+        uses: ./actions/regesta/booster/deployFioriApp
+        with:
+          pathToApp: ./${{ matrix.path }}
+          apiEndpoint: ${{ inputs.publicApiUrl }}:${{ inputs.publicApiPort }}/sap/zregboosterwkf
+          deployEndpoint: ${{ inputs.publicApiUrl }}:${{ inputs.publicDeployPort }}
+          client: ${{ inputs.client }}
+          username: ${{ inputs.username }}
+          password: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
+          createTrkorrTarget: ${{ inputs.trTarget }}
+          createTrkorrText: 'Github actions generated for deploy'
+  trmPublish:
+    name: TRM Publish (Staging registry)
+    needs: deployFioriApps
+    if: always() && !failure() && !cancelled()
+    runs-on: [self-hosted, Windows, RegRunner]
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: tar -xf checkout.zip
+        shell: cmd
+      - name: TRM Publish (Staging registry)
+        uses: ./actions/regesta/booster/publishTrm
+        with:
+          endpoint: ${{ inputs.stagingRegistryEndpoint }}
+          token: ${{ secrets.TRM_TOKEN }}
+          devclass: ${{ inputs.devclass }}
+          dest: ${{ inputs.dest }}
+          asHost: ${{ inputs.asHost }}
+          sysNr: ${{ inputs.sysNr }}
+          sapRouter: ${{ inputs.sapRouter }}
+          client: ${{ inputs.client }}
+          lang: ${{ inputs.lang }}
+          user: ${{ inputs.username }}
+          password: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
+          trTarget: ${{ inputs.trTarget }}
+          manifestPath: ./repo/manifest.json
+          skipDependencies: ${{ inputs.skipDependencies }}
+          releaseTimeout: ${{ inputs.releaseTimeout }}
+  createPreRelease:
+    name: Create Github pre-release
+    runs-on: ubuntu-latest
+    needs: trmPublish
+    if: always() && !failure() && !cancelled()
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Create pre-release
+        uses: ./actions/regesta/booster/createPreRelease
+        id: createPreRelease
+        with:
+          manifestPath: ./repo/manifest.json
