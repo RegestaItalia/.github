@@ -1,0 +1,9 @@
+[
+  {
+    "name": "ABAP",
+    "template": {
+      "prerelease": "abapCreatePreRelease",
+      "movetorelease": "abapMoveToRelease"
+    }
+  }
+]
