@@ -2,9 +2,6 @@ name: Booster Workflow (generic)
 on:
   workflow_call:
     inputs:
-      config:
-        required: true
-        type: string
       vars:
         required: true
         type: string
