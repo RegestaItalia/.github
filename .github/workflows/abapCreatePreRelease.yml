@@ -67,12 +67,12 @@ jobs:
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
       - name: Zip artifact checkout
-        run: zip checkout_prerelease.zip ./* -r
+        run: zip checkout.zip ./* -r
       - name: Upload artifact
         uses: actions/upload-artifact@master
         with:
-          name: checkout
-          path: checkout_prerelease.zip
+          name: checkout_prerelease
+          path: checkout.zip
           retention-days: 1
   listFioriApps:
     name: List Fiori apps
@@ -83,10 +83,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@master
         with:
-          name: checkout
+          name: checkout_prerelease
           path: ./
       - name: Unzip checkout
-        run: unzip checkout_prerelease.zip
+        run: unzip checkout.zip
       - name: List fiori apps
         id: listFolders
         uses: ./actions/regesta/booster/getFioriMatrix
@@ -101,10 +101,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@master
         with:
-          name: checkout
+          name: checkout_prerelease
           path: ./
       - name: Unzip checkout
-        run: unzip checkout_prerelease.zip
+        run: unzip checkout.zip
       - name: Deploy fiori app
         uses: ./actions/regesta/booster/deployFioriApp
         with:
@@ -124,10 +124,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@master
         with:
-          name: checkout
+          name: checkout_prerelease
           path: ./
       - name: Unzip checkout
-        run: tar -xf checkout_prerelease.zip
+        run: tar -xf checkout.zip
         shell: cmd
       - name: TRM Publish (Staging registry)
         uses: ./actions/regesta/booster/publishTrm
@@ -155,10 +155,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@master
         with:
-          name: checkout
+          name: checkout_prerelease
           path: ./
       - name: Unzip checkout
-        run: unzip checkout_prerelease.zip
+        run: unzip checkout.zip
       - name: Create pre-release
         uses: ./actions/regesta/booster/createPreRelease
         id: createPreRelease
