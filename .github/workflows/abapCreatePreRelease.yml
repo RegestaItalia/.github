@@ -49,7 +49,7 @@ on:
           type: boolean
         releaseTimeout:
           required: false
-          type: number
+          type: string
 jobs:
   checkout:
     name: Checkout
@@ -67,12 +67,12 @@ jobs:
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
       - name: Zip artifact checkout
-        run: zip checkout.zip ./* -r
+        run: zip checkout_prerelease.zip ./* -r
       - name: Upload artifact
         uses: actions/upload-artifact@master
         with:
           name: checkout
-          path: checkout.zip
+          path: checkout_prerelease.zip
           retention-days: 1
   listFioriApps:
     name: List Fiori apps
@@ -86,7 +86,7 @@ jobs:
           name: checkout
           path: ./
       - name: Unzip checkout
-        run: unzip checkout.zip
+        run: unzip checkout_prerelease.zip
       - name: List fiori apps
         id: listFolders
         uses: ./actions/regesta/booster/getFioriMatrix
@@ -104,7 +104,7 @@ jobs:
           name: checkout
           path: ./
       - name: Unzip checkout
-        run: unzip checkout.zip
+        run: unzip checkout_prerelease.zip
       - name: Deploy fiori app
         uses: ./actions/regesta/booster/deployFioriApp
         with:
@@ -127,7 +127,7 @@ jobs:
           name: checkout
           path: ./
       - name: Unzip checkout
-        run: tar -xf checkout.zip
+        run: tar -xf checkout_prerelease.zip
         shell: cmd
       - name: TRM Publish (Staging registry)
         uses: ./actions/regesta/booster/publishTrm
@@ -158,7 +158,7 @@ jobs:
           name: checkout
           path: ./
       - name: Unzip checkout
-        run: unzip checkout.zip
+        run: unzip checkout_prerelease.zip
       - name: Create pre-release
         uses: ./actions/regesta/booster/createPreRelease
         id: createPreRelease
