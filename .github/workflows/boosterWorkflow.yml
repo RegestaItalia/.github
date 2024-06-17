@@ -94,6 +94,7 @@ jobs:
       - id: lang
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_LANG', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
   abapCreatePreRelease:
+    name: Create pre-release (ABAP)
     needs: [readConfig, getSapSourceSystem]
     if: ${{ github.event.workflow == '.github/workflows/createPreRelease.yml' && needs.readConfig.outputs.prerelease == 'abapCreatePreRelease' }}
     uses: ./.github/workflows/abapCreatePreRelease.yml
@@ -114,6 +115,7 @@ jobs:
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
     secrets: inherit
   abapMoveToRelease:
+    name: Move to release (ABAP)
     needs: [readConfig]
     if: ${{ github.event.workflow == '.github/workflows/moveToRelease.yml' && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
     uses: ./.github/workflows/abapMoveToRelease.yml
