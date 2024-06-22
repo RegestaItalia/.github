@@ -3,6 +3,7 @@
     "name": "ABAP",
     "template": {
       "prerelease": "abapCreatePreRelease",
+      "installprerelease": "abapInstallPreRelease",
       "movetorelease": "abapMoveToRelease"
     }
   }
