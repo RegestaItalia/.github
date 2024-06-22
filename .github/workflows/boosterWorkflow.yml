@@ -37,6 +37,7 @@ jobs:
     outputs:
       prerelease: ${{ steps.readConfig.outputs.prerelease }}
       movetorelease: ${{ steps.readConfig.outputs.movetorelease }}
+      installprerelease: ${{ steps.readConfig.outputs.installprerelease }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@master
@@ -93,6 +94,39 @@ jobs:
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_SAPROUTER', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: lang
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_LANG', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+  getSapQASystem:
+    name: Read SAP Quality Assurance System
+    runs-on: ubuntu-latest
+    if: ${{ fromJson(inputs.vars).QA_SYSTEM_ID != '' }}
+    outputs:
+      name: ${{ steps.name.outputs.out }}
+      client: ${{ steps.client.outputs.out }}
+      username: ${{ steps.username.outputs.out }}
+      trTarget: ${{ steps.trTarget.outputs.out }}
+      dest: ${{ steps.dest.outputs.out }}
+      asHost: ${{ steps.asHost.outputs.out }}
+      sysNr: ${{ steps.sysNr.outputs.out }}
+      sapRouter: ${{ steps.sapRouter.outputs.out }}
+      lang: ${{ steps.lang.outputs.out }}
+    steps:
+      - id: name
+        run: echo "out=${{ fromJson(inputs.vars).QA_SYSTEM_ID }}" >> "$GITHUB_OUTPUT"
+      - id: client
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_CLIENT', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: username
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_USER', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: trTarget
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_TRTARGET', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: dest
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_DEST', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: asHost
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_ASHOST', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: sysNr
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_SYSNR', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: sapRouter
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_SAPROUTER', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: lang
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_LANG', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
   abapCreatePreRelease:
     name: Create pre-release (ABAP)
     needs: [readConfig, getSapSourceSystem]
@@ -114,6 +148,23 @@ jobs:
       sapRouter: ${{ needs.getSapSourceSystem.outputs.sapRouter }}
       skipDependencies: ${{ fromJson(inputs.vars).SKIP_DEPENDENCIES == 'true' }}
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
+    secrets: inherit
+  abapInstallPreRelease:
+    name: Install Pre release to QA system
+    needs: [readConfig, getSapQASystem]
+    if: ${{ github.event.workflow == '.github/workflows/installPreRelease.yml' && needs.readConfig.outputs.prerelease == 'abapInstallPreRelease' }}
+    uses: ./.github/workflows/abapInstallRelease.yml
+    with:
+      systemId: ${{ needs.getSapQASystem.outputs.name }}
+      client: ${{ needs.getSapQASystem.outputs.client }}
+      username: ${{ needs.getSapQASystem.outputs.username }}
+      trTarget: ${{ needs.getSapQASystem.outputs.trTarget }}
+      registryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
+      dest: ${{ needs.getSapQASystem.outputs.dest }}
+      asHost: ${{ needs.getSapQASystem.outputs.asHost }}
+      sysNr: ${{ needs.getSapQASystem.outputs.sysNr }}
+      sapRouter: ${{ needs.getSapQASystem.outputs.sapRouter }}
+      lang: ${{ needs.getSapQASystem.outputs.lang }}
     secrets: inherit
   abapMoveToRelease:
     name: Move to release (ABAP)
