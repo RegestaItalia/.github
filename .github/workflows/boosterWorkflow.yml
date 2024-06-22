@@ -112,7 +112,7 @@ jobs:
       asHost: ${{ needs.getSapSourceSystem.outputs.asHost }}
       sysNr: ${{ needs.getSapSourceSystem.outputs.sysNr }}
       sapRouter: ${{ needs.getSapSourceSystem.outputs.sapRouter }}
-      skipDependencies: ${{ fromJson(inputs.vars).SKIP_DEPENDENCIES }}
+      skipDependencies: ${{ fromJson(inputs.vars).SKIP_DEPENDENCIES === 'true' }}
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
     secrets: inherit
   abapMoveToRelease:
