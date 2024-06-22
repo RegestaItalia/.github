@@ -1,0 +1,58 @@
+name: Install ABAP release
+on:
+    workflow_call:
+      inputs:
+        systemId:
+          required: true
+          type: string
+        client:
+          required: true
+          type: string
+        username:
+          required: true
+          type: string
+        trTarget:
+          required: true
+          type: string
+        registryEndpoint:
+          required: true
+          type: string
+        dest:
+          required: true
+          type: string
+        asHost:
+          required: true
+          type: string
+        sysNr:
+          required: true
+          type: string
+        sapRouter:
+          required: false
+          type: string
+        lang:
+          required: true
+          type: string
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RegRepo
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: repo
+      - name: Checkout Regesta Actions
+        uses: actions/checkout@v2
+        with:
+          repository: RegestaItalia/actions
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: actions/regesta
+      - name: Zip artifact checkout
+        run: zip checkout.zip ./* -r
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: checkout_release
+          path: checkout.zip
+          retention-days: 1
