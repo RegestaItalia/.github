@@ -82,6 +82,8 @@ jobs:
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_CLIENT', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: username
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_USER', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: trTarget
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_TRTARGET', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: dest
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_DEST', fromJson(inputs.vars).SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: asHost
@@ -114,8 +116,6 @@ jobs:
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_CLIENT', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: username
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_USER', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
-      - id: trTarget
-        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_TRTARGET', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: dest
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_DEST', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: asHost
