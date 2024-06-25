@@ -52,6 +52,7 @@ jobs:
         with:
           repoName: ${{ github.repository }}
           githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
+      - run: echo ${{ github.event.workflow }}
   getSapSourceSystem:
     name: Read SAP Source System
     runs-on: ubuntu-latest
