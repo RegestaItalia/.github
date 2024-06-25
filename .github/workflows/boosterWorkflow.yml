@@ -108,6 +108,7 @@ jobs:
       sysNr: ${{ steps.sysNr.outputs.out }}
       sapRouter: ${{ steps.sapRouter.outputs.out }}
       lang: ${{ steps.lang.outputs.out }}
+      wbTransportTarget: ${{ steps.wbTransportTarget.outputs.out }}
     steps:
       - id: name
         run: echo "out=${{ fromJson(inputs.vars).QA_SYSTEM_ID }}" >> "$GITHUB_OUTPUT"
@@ -127,6 +128,8 @@ jobs:
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_SAPROUTER', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
       - id: lang
         run: echo "out=${{ fromJson(inputs.vars)[format('{0}_LANG', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
+      - id: wbTransportTarget
+        run: echo "out=${{ fromJson(inputs.vars)[format('{0}_QATARGET', fromJson(inputs.vars).QA_SYSTEM_ID)] }}" >> "$GITHUB_OUTPUT"
   abapCreatePreRelease:
     name: Create pre-release (ABAP)
     needs: [readConfig, getSapSourceSystem]
@@ -147,6 +150,7 @@ jobs:
       sysNr: ${{ needs.getSapSourceSystem.outputs.sysNr }}
       sapRouter: ${{ needs.getSapSourceSystem.outputs.sapRouter }}
       skipDependencies: ${{ fromJson(inputs.vars).SKIP_DEPENDENCIES == 'true' }}
+      releaseTimeout: ${{ fromJson(inputs.vars).RELEASE_TMS_TIMEOUT }}
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
     secrets: inherit
   abapInstallPreRelease:
@@ -158,13 +162,15 @@ jobs:
       systemId: ${{ needs.getSapQASystem.outputs.name }}
       client: ${{ needs.getSapQASystem.outputs.client }}
       username: ${{ needs.getSapQASystem.outputs.username }}
-      trTarget: ${{ needs.getSapQASystem.outputs.trTarget }}
       registryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
       dest: ${{ needs.getSapQASystem.outputs.dest }}
       asHost: ${{ needs.getSapQASystem.outputs.asHost }}
       sysNr: ${{ needs.getSapQASystem.outputs.sysNr }}
       sapRouter: ${{ needs.getSapQASystem.outputs.sapRouter }}
       lang: ${{ needs.getSapQASystem.outputs.lang }}
+      importTimeout: ${{ fromJson(inputs.vars).IMPORT_TMS_TIMEOUT }}
+      wbTransportTarget: ${{ needs.getSapQASystem.outputs.wbTransportTarget }}
+      packageVersion: ${{ github.event.release.tag_name }}
     secrets: inherit
   abapMoveToRelease:
     name: Move to release (ABAP)
