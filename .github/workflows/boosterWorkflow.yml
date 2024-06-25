@@ -6,14 +6,18 @@ on:
         required: true
         type: string
 jobs:
-  checkout:
-    name: Checkout
+  debug:
+    name: Debug data
     runs-on: ubuntu-latest
     steps:
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+  checkout:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout RegRepo
         uses: actions/checkout@v2
         with:
