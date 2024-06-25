@@ -53,7 +53,7 @@ jobs:
       - name: TRM Install
         uses: ./actions/regesta/booster/installTrm
         with:
-          endpoint: ${{ inputs.stagingRegistryEndpoint }}
+          endpoint: ${{ inputs.registryEndpoint }}
           token: ${{ secrets.TRM_TOKEN }}
           dest: ${{ inputs.dest }}
           asHost: ${{ inputs.asHost }}
