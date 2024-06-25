@@ -39,37 +39,13 @@ on:
           required: true
           type: string
 jobs:
-  checkout:
-    name: Checkout
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout RegRepo
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: repo
-      - name: Checkout Regesta Actions
-        uses: actions/checkout@v2
-        with:
-          repository: RegestaItalia/actions
-          token: ${{ secrets.CI_GITHUB_TOKEN }}
-          path: actions/regesta
-      - name: Zip artifact checkout
-        run: zip checkout.zip ./* -r
-      - name: Upload artifact
-        uses: actions/upload-artifact@master
-        with:
-          name: checkout_release
-          path: checkout.zip
-          retention-days: 1
   trmPublish:
     name: TRM Install
-    needs: checkout
     runs-on: [self-hosted, Windows, RegRunner]
     steps:
       - uses: actions/download-artifact@master
         with:
-          name: checkout_release
+          name: checkout
           path: ./
       - name: Unzip checkout
         run: tar -xf checkout.zip
