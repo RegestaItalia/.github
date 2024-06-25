@@ -135,7 +135,7 @@ jobs:
   abapCreatePreRelease:
     name: Create pre-release (ABAP)
     needs: [readConfig, getSapSourceSystem]
-    if: ${{ github.event.workflow == '.github/workflows/createPreRelease.yml' && needs.readConfig.outputs.prerelease == 'abapCreatePreRelease' }}
+    if: ${{ contains(github.event.workflow, '.github/workflows/createPreRelease.yml@') && needs.readConfig.outputs.prerelease == 'abapCreatePreRelease' }}
     uses: ./.github/workflows/abapCreatePreRelease.yml
     with:
       systemId: ${{ needs.getSapSourceSystem.outputs.name }}
@@ -158,7 +158,7 @@ jobs:
   abapInstallPreRelease:
     name: Install Pre release to QA system (ABAP)
     needs: [readConfig, getSapQASystem]
-    if: ${{ github.event.workflow == '.github/workflows/installPreRelease.yml' && needs.readConfig.outputs.installprerelease == 'abapInstallPreRelease' }}
+    if: ${{ contains(github.event.workflow, '.github/workflows/installPreRelease.yml@') && needs.readConfig.outputs.installprerelease == 'abapInstallPreRelease' }}
     uses: ./.github/workflows/abapInstallRelease.yml
     with:
       systemId: ${{ needs.getSapQASystem.outputs.name }}
@@ -177,7 +177,7 @@ jobs:
   abapMoveToRelease:
     name: Move to release (ABAP)
     needs: [readConfig]
-    if: ${{ github.event.workflow == '.github/workflows/moveToRelease.yml' && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
+    if: ${{ contains(github.event.workflow, '.github/workflows/moveToRelease.yml@') && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
     uses: ./.github/workflows/abapMoveToRelease.yml
     with:
       stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
