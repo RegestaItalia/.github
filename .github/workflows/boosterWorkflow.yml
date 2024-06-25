@@ -154,7 +154,7 @@ jobs:
   abapInstallPreRelease:
     name: Install Pre release to QA system (ABAP)
     needs: [readConfig, getSapQASystem]
-    if: ${{ github.event.workflow == '.github/workflows/installPreRelease.yml' && needs.readConfig.outputs.prerelease == 'abapInstallPreRelease' }}
+    if: ${{ github.event.workflow == '.github/workflows/installPreRelease.yml' && needs.readConfig.outputs.installprerelease == 'abapInstallPreRelease' }}
     uses: ./.github/workflows/abapInstallRelease.yml
     with:
       systemId: ${{ needs.getSapQASystem.outputs.name }}
