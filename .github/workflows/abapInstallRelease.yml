@@ -11,9 +11,6 @@ on:
         username:
           required: true
           type: string
-        trTarget:
-          required: true
-          type: string
         registryEndpoint:
           required: true
           type: string
@@ -30,6 +27,15 @@ on:
           required: false
           type: string
         lang:
+          required: true
+          type: string
+        importTimeout:
+          required: false
+          type: string
+        wbTransportTarget:
+          required: true
+          type: string
+        packageVersion:
           required: true
           type: string
 jobs:
@@ -56,3 +62,32 @@ jobs:
           name: checkout_release
           path: checkout.zip
           retention-days: 1
+  trmPublish:
+    name: TRM Install
+    needs: checkout
+    runs-on: [self-hosted, Windows, RegRunner]
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout_release
+          path: ./
+      - name: Unzip checkout
+        run: tar -xf checkout.zip
+        shell: cmd
+      - name: TRM Install
+        uses: ./actions/regesta/booster/installTrm
+        with:
+          endpoint: ${{ inputs.stagingRegistryEndpoint }}
+          token: ${{ secrets.TRM_TOKEN }}
+          dest: ${{ inputs.dest }}
+          asHost: ${{ inputs.asHost }}
+          sysNr: ${{ inputs.sysNr }}
+          sapRouter: ${{ inputs.sapRouter }}
+          client: ${{ inputs.client }}
+          lang: ${{ inputs.lang }}
+          user: ${{ inputs.username }}
+          password: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
+          manifestPath: ./repo/manifest.json
+          packageVersion: ${{ inputs.packageVersion }}
+          wbTransportTarget: ${{ inputs.wbTransportTarget }}
+          importTimeout: ${{ inputs.importTimeout }}
