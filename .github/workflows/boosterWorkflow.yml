@@ -185,7 +185,7 @@ jobs:
   abapMoveToRelease:
     name: Move to release (ABAP)
     needs: [readConfig]
-    if: ${{ contains(github.workflow_ref, '.github/workflows/moveToRelease.yml@') && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
+    if: ${{ contains(github.workflow_ref, '.github/workflows/moveToRelease') && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
     uses: ./.github/workflows/abapMoveToRelease.yml
     with:
       stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
