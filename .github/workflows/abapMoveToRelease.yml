@@ -24,6 +24,6 @@ jobs:
       - name: API call
         uses: dkershner6/post-api-call-action@v2
         with:
-          url: ${{ inputs.stagingRegistryEndpoint }}/moveToProd
+          url: ${{ inputs.stagingRegistryEndpoint }}moveToProd
           headers: "{\"Authorization\": \"token ${{ secrets.TRM_TOKEN }}\"}"
           params: "{\"package\": \"${{ steps.manifest.outputs.packageName }}\", \"version\": \"${{ steps.manifest.outputs.packageVersion }}\"}"
