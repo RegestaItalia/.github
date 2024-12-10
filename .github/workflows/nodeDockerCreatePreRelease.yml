@@ -43,7 +43,9 @@ jobs:
         with:
           context: repo
           push: true
-          tags: ${{ inputs.registry }}/${{ inputs.imageName }}:${{ steps.version.outputs.value }}
+          tags: |
+              ${{ inputs.registry }}/${{ inputs.imageName }}:prerelease
+              ${{ inputs.registry }}/${{ inputs.imageName }}:${{ steps.version.outputs.value }}
           labels: org.opencontainers.image.source=${{ inputs.repoUrl }}
   createPreRelease:
     name: Create Github pre-release
