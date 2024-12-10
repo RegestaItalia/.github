@@ -17,6 +17,11 @@ on:
 jobs:
   createPreRelease:
     name: Create Github pre-release
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@master
