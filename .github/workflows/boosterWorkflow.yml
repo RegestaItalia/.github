@@ -163,6 +163,16 @@ jobs:
       releaseTimeout: ${{ fromJson(inputs.vars).RELEASE_TMS_TIMEOUT }}
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
     secrets: inherit
+  nodeDockerCreatePreRelease:
+    name: Create pre-release (Node docker)
+    needs: [readConfig]
+    if: ${{ contains(github.workflow_ref, '.github/workflows/createPreRelease.yml@') && needs.readConfig.outputs.prerelease == 'nodeDockerCreatePreRelease' }}
+    uses: ./.github/workflows/nodeDockerCreatePreRelease.yml
+    with:
+      registry: ${{ fromJson(inputs.vars).DOCKER_REGISTRY }}
+      username: ${{ fromJson(inputs.vars).DOCKER_USERNAME }}
+      imageName: ${{ fromJson(inputs.vars).DOCKER_IMAGE_NAME }}
+    secrets: inherit
   abapInstallPreRelease:
     name: Install Pre release to QA system (ABAP)
     needs: [readConfig, getSapQASystem]
