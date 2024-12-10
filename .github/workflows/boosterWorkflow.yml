@@ -171,7 +171,6 @@ jobs:
     with:
       registry: ${{ fromJson(inputs.vars).DOCKER_REGISTRY }}
       username: ${{ fromJson(inputs.vars).DOCKER_USERNAME }}
-      imageName: regestaitalia/${{ fromJson(inputs.vars).DOCKER_IMAGE_NAME }}
       repoUrl: ${{ github.event.repository.html_url }}
     secrets: inherit
   abapInstallPreRelease:
@@ -200,4 +199,13 @@ jobs:
     uses: ./.github/workflows/abapMoveToRelease.yml
     with:
       stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
+    secrets: inherit
+  nodeDockerMoveToRelease:
+    name: Move to release (Node docker)
+    needs: [readConfig]
+    if: ${{ contains(github.workflow_ref, '.github/workflows/moveToRelease') && needs.readConfig.outputs.movetorelease == 'nodeDockerMoveToRelease' }}
+    uses: ./.github/workflows/abapMoveToRelease.yml
+    with:
+      registry: ${{ fromJson(inputs.vars).DOCKER_REGISTRY }}
+      username: ${{ fromJson(inputs.vars).DOCKER_USERNAME }}
     secrets: inherit
