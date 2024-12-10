@@ -8,9 +8,6 @@ on:
         username:
           required: true
           type: string
-        imageName:
-          required: true
-          type: string
         repoUrl:
           required: false
           type: string
@@ -36,6 +33,12 @@ jobs:
         id: version
         with:
           cmd: 'jq .version ${{ inputs.manifestPath }} -r'
+      - name: Extract image name from manifest.json
+        uses: sergeysova/jq-action@v2
+        id: imageName
+        with:
+          cmd: 'jq .name ${{ inputs.manifestPath }} -r'
+      - run: echo "image name ${{ steps.imageName.outputs.value }}"
       - run: echo "pre-release version ${{ steps.version.outputs.value }}"
       - name: Build and push Docker image
         id: push
@@ -44,8 +47,8 @@ jobs:
           context: repo
           push: true
           tags: |
-              ${{ inputs.registry }}/${{ inputs.imageName }}:prerelease
-              ${{ inputs.registry }}/${{ inputs.imageName }}:${{ steps.version.outputs.value }}
+              ${{ inputs.registry }}/${{ steps.imageName.outputs.value }}:prerelease
+              ${{ inputs.registry }}/${{ steps.imageName.outputs.value }}:${{ steps.version.outputs.value }}
           labels: org.opencontainers.image.source=${{ inputs.repoUrl }}
   createPreRelease:
     name: Create Github pre-release
