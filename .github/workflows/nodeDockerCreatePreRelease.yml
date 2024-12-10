@@ -6,7 +6,7 @@ on:
           required: true
           type: string
         username:
-          required: true
+          required: false
           type: string
         repoUrl:
           required: false
@@ -38,7 +38,24 @@ jobs:
         id: imageName
         with:
           cmd: 'jq .name ${{ inputs.manifestPath }} -r'
-      - run: echo "image name ${{ steps.imageName.outputs.value }}"
+      - name: Change case for image name
+        id: change-case
+        uses: ASzc/change-string-case-action@v5
+        with:
+          string: ${{ steps.imageName.outputs.value }}
+      - name: Replace dots in image name
+        uses: frabert/replace-string-action@v2.4
+        with:
+          pattern: \.
+          string: ${{ steps.change-case.outputs.lowercase }}
+          replace-with: "-"
+      - name: Replace dots in image name
+        uses: frabert/replace-string-action@v2.4
+        with:
+          pattern: \@
+          string: ${{ steps.change-case.outputs.lowercase }}
+          replace-with: ""
+      - run: echo "image name ${{ steps.change-case.outputs.lowercase }}"
       - run: echo "pre-release version ${{ steps.version.outputs.value }}"
       - name: Build and push Docker image
         id: push
@@ -47,8 +64,8 @@ jobs:
           context: repo
           push: true
           tags: |
-              ${{ inputs.registry }}/${{ steps.imageName.outputs.value }}:prerelease
-              ${{ inputs.registry }}/${{ steps.imageName.outputs.value }}:${{ steps.version.outputs.value }}
+              ${{ inputs.registry }}/${{ steps.change-case.outputs.lowercase }}:prerelease
+              ${{ inputs.registry }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
           labels: org.opencontainers.image.source=${{ inputs.repoUrl }}
   createPreRelease:
     name: Create Github pre-release
