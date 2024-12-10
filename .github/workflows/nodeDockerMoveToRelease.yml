@@ -34,8 +34,6 @@ jobs:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.username }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - run: docker pull ${{ inputs.imageName }}:${{ steps.version.outputs.value }}-prerelease
-      - run: docker tag ${{ inputs.imageName }}:${{ steps.version.outputs.value }}-prerelease ${{ inputs.imageName }}:${{ steps.version.outputs.value }}
-      - run: docker tag ${{ inputs.imageName }}:${{ steps.version.outputs.value }}-prerelease ${{ inputs.imageName }}:latest
-      - run: docker push ${{ inputs.imageName }}:${{ steps.version.outputs.value }}
+      - run: docker pull ${{ inputs.imageName }}:${{ steps.version.outputs.value }}
+      - run: docker tag ${{ inputs.imageName }}:${{ steps.version.outputs.value }} ${{ inputs.imageName }}:latest
       - run: docker push ${{ inputs.imageName }}:latest
