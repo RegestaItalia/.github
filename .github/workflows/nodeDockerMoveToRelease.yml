@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs:
       registry:
-        required: true
+        required: false
         type: string
       username:
         required: false
@@ -19,6 +19,21 @@ jobs:
           path: ./
       - name: Unzip checkout
         run: unzip checkout.zip
+      - name: Set registry
+        run: |
+          echo "DOCKER_REGISTRY=${{ inputs.registry || 'ghcr.io' }}" >> $GITHUB_ENV
+      - name: Set username
+        run: |
+          echo "DOCKER_USERNAME=${{ inputs.username || github.actor }}" >> $GITHUB_ENV
+      - name: Set password
+        run: |
+          echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD || secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
       - name: Extract version from manifest.json
         uses: sergeysova/jq-action@v2
         id: version
@@ -48,12 +63,6 @@ jobs:
           replace-with: ""
       - run: echo "image name ${{ steps.change-case.outputs.lowercase }}"
       - run: echo "pre-release version ${{ steps.version.outputs.value }}"
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          registry: ${{ inputs.registry }}
-          username: ${{ inputs.username }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - run: docker pull ${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
-      - run: docker tag ${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }} ${{ steps.change-case.outputs.lowercase }}:latest
-      - run: docker push ${{ steps.change-case.outputs.lowercase }}:latest
+      - run: docker pull ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
+      - run: docker tag ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }} ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:latest
+      - run: docker push ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:latest
