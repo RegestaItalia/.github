@@ -6,10 +6,7 @@ on:
         required: true
         type: string
       username:
-        required: true
-        type: string
-      imageName:
-        required: true
+        required: false
         type: string
 jobs:
   addTags:
@@ -27,6 +24,29 @@ jobs:
         id: version
         with:
           cmd: 'jq .version ${{ inputs.manifestPath }} -r'
+      - name: Extract image name from manifest.json
+        uses: sergeysova/jq-action@v2
+        id: imageName
+        with:
+          cmd: 'jq .name ${{ inputs.manifestPath }} -r'
+      - name: Change case for image name
+        id: change-case
+        uses: ASzc/change-string-case-action@v5
+        with:
+          string: ${{ steps.imageName.outputs.value }}
+      - name: Replace dots in image name
+        uses: frabert/replace-string-action@v2.4
+        with:
+          pattern: \.
+          string: ${{ steps.change-case.outputs.lowercase }}
+          replace-with: "-"
+      - name: Replace dots in image name
+        uses: frabert/replace-string-action@v2.4
+        with:
+          pattern: \@
+          string: ${{ steps.change-case.outputs.lowercase }}
+          replace-with: "-"
+      - run: echo "image name ${{ steps.change-case.outputs.lowercase }}"
       - run: echo "pre-release version ${{ steps.version.outputs.value }}"
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -34,6 +54,6 @@ jobs:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.username }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - run: docker pull ${{ inputs.imageName }}:${{ steps.version.outputs.value }}
-      - run: docker tag ${{ inputs.imageName }}:${{ steps.version.outputs.value }} ${{ inputs.imageName }}:latest
-      - run: docker push ${{ inputs.imageName }}:latest
+      - run: docker pull ${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
+      - run: docker tag ${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }} ${{ steps.change-case.outputs.lowercase }}:latest
+      - run: docker push ${{ steps.change-case.outputs.lowercase }}:latest
