@@ -28,12 +28,6 @@ jobs:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.username }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - run: npm install
-        working-directory: repo
-      - run: npm run build
-        working-directory: repo
-      - run: npm run build
-        working-directory: repo
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
