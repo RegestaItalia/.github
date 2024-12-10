@@ -171,7 +171,6 @@ jobs:
     with:
       registry: ${{ fromJson(inputs.vars).DOCKER_REGISTRY }}
       username: ${{ fromJson(inputs.vars).DOCKER_USERNAME }}
-      repoUrl: ${{ github.event.repository.html_url }}
     secrets: inherit
   abapInstallPreRelease:
     name: Install Pre release to QA system (ABAP)
