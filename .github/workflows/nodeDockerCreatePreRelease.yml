@@ -11,6 +11,9 @@ on:
         imageName:
           required: true
           type: string
+        repoUrl:
+          required: false
+          type: string
 jobs:
   createPreRelease:
     name: Create Github pre-release
@@ -40,6 +43,7 @@ jobs:
           context: repo
           push: true
           tags: ${{ inputs.registry }}/${{ inputs.imageName }}:latest
+          labels: org.opencontainers.image.source=${{ inputs.repoUrl }}
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
