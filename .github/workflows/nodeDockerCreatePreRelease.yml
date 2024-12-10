@@ -3,12 +3,9 @@ on:
     workflow_call:
       inputs:
         registry:
-          required: true
-          type: string
-        username:
           required: false
           type: string
-        repoUrl:
+        username:
           required: false
           type: string
 jobs:
@@ -22,12 +19,21 @@ jobs:
           path: ./
       - name: Unzip checkout
         run: unzip checkout.zip
+      - name: Set registry
+        run: |
+          echo "DOCKER_REGISTRY=${{ inputs.registry || 'ghcr.io' }}" >> $GITHUB_ENV
+      - name: Set username
+        run: |
+          echo "DOCKER_USERNAME=${{ inputs.username || github.actor }}" >> $GITHUB_ENV
+      - name: Set password
+        run: |
+          echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD || secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
-          registry: ${{ inputs.registry }}
-          username: ${{ inputs.username }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
       - name: Extract version from manifest.json
         uses: sergeysova/jq-action@v2
         id: version
@@ -64,9 +70,9 @@ jobs:
           context: repo
           push: true
           tags: |
-              ${{ inputs.registry }}/${{ steps.change-case.outputs.lowercase }}:prerelease
-              ${{ inputs.registry }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
-          labels: org.opencontainers.image.source=${{ inputs.repoUrl }}
+              ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:prerelease
+              ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
+          labels: org.opencontainers.image.source=${{ github.event.repository.html_url }}
   createPreRelease:
     name: Create Github pre-release
     runs-on: ubuntu-latest
