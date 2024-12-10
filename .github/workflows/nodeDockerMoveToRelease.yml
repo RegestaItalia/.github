@@ -45,7 +45,7 @@ jobs:
         with:
           pattern: \@
           string: ${{ steps.change-case.outputs.lowercase }}
-          replace-with: "-"
+          replace-with: ""
       - run: echo "image name ${{ steps.change-case.outputs.lowercase }}"
       - run: echo "pre-release version ${{ steps.version.outputs.value }}"
       - name: Log in to the Container registry
