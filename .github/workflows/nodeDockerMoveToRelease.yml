@@ -1,0 +1,41 @@
+name: Move to release
+on:
+  workflow_call:
+    inputs:
+      registry:
+        required: true
+        type: string
+      username:
+        required: true
+        type: string
+      imageName:
+        required: true
+        type: string
+jobs:
+  addTags:
+    name: Add tags to docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: checkout
+          path: ./
+      - name: Unzip checkout
+        run: unzip checkout.zip
+      - name: Extract version from manifest.json
+        uses: sergeysova/jq-action@v2
+        id: version
+        with:
+          cmd: 'jq .version ${{ inputs.manifestPath }} -r'
+      - run: echo "pre-release version ${{ steps.version.outputs.value }}"
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.username }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker pull ${{ inputs.imageName }}:${{ steps.version.outputs.value }}-prerelease
+      - run: docker tag ${{ inputs.imageName }}:${{ steps.version.outputs.value }}-prerelease ${{ inputs.imageName }}:${{ steps.version.outputs.value }}
+      - run: docker tag ${{ inputs.imageName }}:${{ steps.version.outputs.value }}-prerelease ${{ inputs.imageName }}:latest
+      - run: docker push ${{ inputs.imageName }}:${{ steps.version.outputs.value }}
+      - run: docker push ${{ inputs.imageName }}:latest
