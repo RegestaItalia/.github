@@ -8,17 +8,8 @@ on:
         username:
           required: true
           type: string
-        password:
-          required: true
-          type: string
         imageName:
           required: true
-          type: string
-        imageVersion:
-          required: true
-          type: string
-        imageTag:
-          required: false
           type: string
 jobs:
   createPreRelease:
@@ -37,7 +28,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.username }}
-          password: ${{ inputs.password }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - run: npm install
         working-directory: repo
       - run: npm run build
