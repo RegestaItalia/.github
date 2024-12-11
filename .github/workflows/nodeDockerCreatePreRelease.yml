@@ -38,12 +38,12 @@ jobs:
         uses: sergeysova/jq-action@v2
         id: version
         with:
-          cmd: 'jq .version ${{ inputs.manifestPath }} -r'
+          cmd: 'jq .version ./repo/manifest.json -r'
       - name: Extract image name from manifest.json
         uses: sergeysova/jq-action@v2
         id: imageName
         with:
-          cmd: 'jq .name ${{ inputs.manifestPath }} -r'
+          cmd: 'jq .name ./repo/manifest.json -r'
       - name: Change case for image name
         id: change-case
         uses: ASzc/change-string-case-action@v5
