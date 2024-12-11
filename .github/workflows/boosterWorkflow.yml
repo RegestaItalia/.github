@@ -203,7 +203,7 @@ jobs:
     name: Move to release (Node docker)
     needs: [readConfig]
     if: ${{ contains(github.workflow_ref, '.github/workflows/moveToRelease') && needs.readConfig.outputs.movetorelease == 'nodeDockerMoveToRelease' }}
-    uses: ./.github/workflows/abapMoveToRelease.yml
+    uses: ./.github/workflows/nodeDockerMoveToRelease.yml
     with:
       registry: ${{ fromJson(inputs.vars).DOCKER_REGISTRY }}
       username: ${{ fromJson(inputs.vars).DOCKER_USERNAME }}
