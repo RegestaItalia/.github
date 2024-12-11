@@ -51,18 +51,20 @@ jobs:
           string: ${{ steps.imageName.outputs.value }}
       - name: Replace dots in image name
         uses: frabert/replace-string-action@v2.4
+        id: replaceDots
         with:
           pattern: \.
           string: ${{ steps.change-case.outputs.lowercase }}
           replace-with: "-"
-      - name: Replace dots in image name
+      - name: Replace at sign in image name
         uses: frabert/replace-string-action@v2.4
+        id: replaceAtSign
         with:
           pattern: \@
-          string: ${{ steps.change-case.outputs.lowercase }}
+          string: ${{ steps.replaceDots.outputs.replaced }}
           replace-with: ""
-      - run: echo "image name ${{ steps.change-case.outputs.lowercase }}"
+      - run: echo "image name ${{ steps.replaceAtSign.outputs.replaced }}"
       - run: echo "pre-release version ${{ steps.version.outputs.value }}"
-      - run: docker pull ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }}
-      - run: docker tag ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:${{ steps.version.outputs.value }} ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:latest
-      - run: docker push ${{ env.DOCKER_REGISTRY }}/${{ steps.change-case.outputs.lowercase }}:latest
+      - run: docker pull ${{ env.DOCKER_REGISTRY }}/${{ steps.replaceAtSign.outputs.replaced }}:${{ steps.version.outputs.value }}
+      - run: docker tag ${{ env.DOCKER_REGISTRY }}/${{ steps.replaceAtSign.outputs.replaced }}:${{ steps.version.outputs.value }} ${{ env.DOCKER_REGISTRY }}/${{ steps.replaceAtSign.outputs.replaced }}:latest
+      - run: docker push ${{ env.DOCKER_REGISTRY }}/${{ steps.replaceAtSign.outputs.replaced }}:latest
