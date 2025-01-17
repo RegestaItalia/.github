@@ -80,7 +80,8 @@ jobs:
           name: checkout
           path: ./
       - name: Unzip checkout
-        run: unzip checkout.zip
+        run: tar -xf checkout.zip
+        shell: cmd
       - name: Deploy fiori app
         uses: ./actions/regesta/booster/deployFioriApp
         with:
