@@ -70,7 +70,7 @@ jobs:
     name: Deploy Fiori app
     needs: listFioriApps
     if: ${{ needs.listFioriApps.outputs.matrix != '[]' }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, RegRunner]
     strategy:
       matrix:
         path: ${{ fromJson(needs.listFioriApps.outputs.matrix) }}
