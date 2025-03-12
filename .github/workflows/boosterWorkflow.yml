@@ -24,24 +24,20 @@ jobs:
     steps:
       - name: Checkout RegRepo
         uses: actions/checkout@v2
-        if: ${{ !fromJson(inputs.vars).SKIPCHECKOUT || fromJson(inputs.vars).SKIPCHECKOUT == 'false' }}
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           path: repo
       - name: Checkout Regesta Actions
         uses: actions/checkout@v2
-        if: ${{ !fromJson(inputs.vars).SKIPCHECKOUT || fromJson(inputs.vars).SKIPCHECKOUT == 'false' }}
         with:
           repository: RegestaItalia/actions
           token: ${{ secrets.CI_GITHUB_TOKEN }}
           path: actions/regesta
       - name: Zip artifact checkout
-        if: ${{ !fromJson(inputs.vars).SKIPCHECKOUT || fromJson(inputs.vars).SKIPCHECKOUT == 'false' }}
         run: zip checkout.zip ./* -r
       - name: Upload artifact
         uses: actions/upload-artifact@master
-        if: ${{ !fromJson(inputs.vars).SKIPCHECKOUT || fromJson(inputs.vars).SKIPCHECKOUT == 'false' }}
         with:
           name: checkout
           path: checkout.zip
