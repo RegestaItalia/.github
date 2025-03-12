@@ -5,6 +5,9 @@ on:
       vars:
         required: true
         type: string
+      manifest:
+        required: false
+        type: string
 jobs:
   debug:
     name: Debug data
@@ -28,6 +31,9 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           path: repo
+      - name: Rename manifest.json
+        if: ${{ inputs.manifest }}
+        run: mv repo/${{ inputs.manifest }} repo/manifest.json
       - name: Checkout Regesta Actions
         uses: actions/checkout@v2
         with:
