@@ -38,6 +38,10 @@ on:
         packageVersion:
           required: true
           type: string
+        manifestPath:
+          required: false
+          type: string
+          default: ./repo/manifest.json
 jobs:
   trmPublish:
     name: TRM Install
@@ -63,7 +67,7 @@ jobs:
           lang: ${{ inputs.lang }}
           user: ${{ inputs.username }}
           password: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
-          manifestPath: ./repo/manifest.json
+          manifestPath: ${{ inputs.manifestPath }}
           packageVersion: ${{ inputs.packageVersion }}
           wbTransportTarget: ${{ inputs.wbTransportTarget }}
           importTimeout: ${{ inputs.importTimeout }}
