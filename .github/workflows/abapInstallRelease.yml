@@ -43,7 +43,7 @@ on:
           type: string
           default: ./repo/manifest.json
 jobs:
-  trmPublish:
+  trmInstall:
     name: TRM Install
     runs-on: [self-hosted, Windows, RegRunner]
     steps:
