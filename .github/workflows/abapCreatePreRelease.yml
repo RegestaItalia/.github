@@ -50,6 +50,14 @@ on:
         releaseTimeout:
           required: false
           type: string
+        manifestPath:
+          required: false
+          type: string
+          default: './repo/manifest.json'
+        fioriRoot:
+          required: false
+          type: string
+          default: './repo/app'
 jobs:
   listFioriApps:
     name: List Fiori apps
@@ -66,6 +74,8 @@ jobs:
       - name: List fiori apps
         id: listFolders
         uses: ./actions/regesta/booster/getFioriMatrix
+        with:
+            appFolderPath: ${{ inputs.fioriRoot }}
   deployFioriApps:
     name: Deploy Fiori app
     needs: listFioriApps
@@ -121,7 +131,7 @@ jobs:
           user: ${{ inputs.username }}
           password: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
           trTarget: ${{ inputs.trTarget }}
-          manifestPath: ./repo/manifest.json
+          manifestPath: ${{ inputs.manifestPath }}
           skipDependencies: ${{ inputs.skipDependencies }}
           releaseTimeout: ${{ inputs.releaseTimeout }}
   createPreRelease:
@@ -140,4 +150,4 @@ jobs:
         uses: ./actions/regesta/booster/createPreRelease
         id: createPreRelease
         with:
-          manifestPath: ./repo/manifest.json
+          manifestPath: ${{ inputs.manifestPath }}
