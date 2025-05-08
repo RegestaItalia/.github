@@ -95,7 +95,7 @@ jobs:
       - name: Deploy fiori app
         uses: ./actions/regesta/booster/deployFioriApp
         with:
-          pathToApp: ${{ matrix.path }}/
+          pathToApp: ${{ matrix.path }}
           apiEndpoint: ${{ inputs.publicApiUrl }}:${{ inputs.publicApiPort }}/sap/zregboosterwkf
           deployEndpoint: ${{ inputs.publicApiUrl }}:${{ inputs.publicDeployPort }}
           client: ${{ inputs.client }}
