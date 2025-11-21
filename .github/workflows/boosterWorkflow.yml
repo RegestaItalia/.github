@@ -159,7 +159,6 @@ jobs:
       client: ${{ needs.getSapSourceSystem.outputs.client }}
       username: ${{ needs.getSapSourceSystem.outputs.username }}
       trTarget: ${{ needs.getSapSourceSystem.outputs.trTarget }}
-      stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
       devclass: ${{ fromJson(inputs.vars).DEVCLASS }}
       dest: ${{ needs.getSapSourceSystem.outputs.dest }}
       asHost: ${{ needs.getSapSourceSystem.outputs.asHost }}
@@ -168,6 +167,8 @@ jobs:
       skipDependencies: ${{ fromJson(inputs.vars).SKIP_DEPENDENCIES == 'true' }}
       releaseTimeout: ${{ fromJson(inputs.vars).RELEASE_TMS_TIMEOUT }}
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
+      preRelease: true
+      tags: rc
     secrets: inherit
   nodeDockerCreatePreRelease:
     name: Create pre-release (Node docker)
