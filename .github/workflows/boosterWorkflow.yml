@@ -188,7 +188,6 @@ jobs:
       systemId: ${{ needs.getSapQASystem.outputs.name }}
       client: ${{ needs.getSapQASystem.outputs.client }}
       username: ${{ needs.getSapQASystem.outputs.username }}
-      registryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
       dest: ${{ needs.getSapQASystem.outputs.dest }}
       asHost: ${{ needs.getSapQASystem.outputs.asHost }}
       sysNr: ${{ needs.getSapQASystem.outputs.sysNr }}
@@ -196,15 +195,13 @@ jobs:
       lang: ${{ needs.getSapQASystem.outputs.lang }}
       importTimeout: ${{ fromJson(inputs.vars).IMPORT_TMS_TIMEOUT }}
       wbTransportTarget: ${{ needs.getSapQASystem.outputs.wbTransportTarget }}
-      packageVersion: ${{ github.event.release.tag_name }}
+      packageVersion: rc
     secrets: inherit
   abapMoveToRelease:
     name: Move to release (ABAP)
     needs: [readConfig]
     if: ${{ contains(github.workflow_ref, '.github/workflows/moveToRelease') && needs.readConfig.outputs.movetorelease == 'abapMoveToRelease' }}
     uses: ./.github/workflows/abapMoveToRelease.yml
-    with:
-      stagingRegistryEndpoint: ${{ fromJson(inputs.vars).TRM_STAGING_REGISTRY_ENDPOINT }}
     secrets: inherit
   nodeDockerMoveToRelease:
     name: Move to release (Node docker)
