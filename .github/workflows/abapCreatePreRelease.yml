@@ -124,7 +124,7 @@ jobs:
         uses: ./actions/regesta/booster/publishTrm
         with:
           preRelease: ${{ inputs.preRelease }}
-          tag: ${{ inputs.tag }}
+          tags: ${{ inputs.tags }}
           token: ${{ secrets.TRM_TOKEN }}
           devclass: ${{ inputs.devclass }}
           dest: ${{ inputs.dest }}
