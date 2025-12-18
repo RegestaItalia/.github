@@ -23,9 +23,13 @@ on:
         trTarget:
           required: true
           type: string
-        stagingRegistryEndpoint:
-          required: true
+        preRelease:
+          required: false
+          default: false
+          type: boolean
+        tags:
           type: string
+          required: false
         devclass:
           required: true
           type: string
@@ -119,7 +123,8 @@ jobs:
       - name: TRM Publish (Staging registry)
         uses: ./actions/regesta/booster/publishTrm
         with:
-          endpoint: ${{ inputs.stagingRegistryEndpoint }}
+          preRelease: ${{ inputs.preRelease }}
+          tag: ${{ inputs.tag }}
           token: ${{ secrets.TRM_TOKEN }}
           devclass: ${{ inputs.devclass }}
           dest: ${{ inputs.dest }}
