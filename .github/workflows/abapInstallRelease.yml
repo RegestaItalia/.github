@@ -11,9 +11,6 @@ on:
         username:
           required: true
           type: string
-        registryEndpoint:
-          required: true
-          type: string
         dest:
           required: true
           type: string
@@ -57,7 +54,6 @@ jobs:
       - name: TRM Install
         uses: ./actions/regesta/booster/installTrm
         with:
-          endpoint: ${{ inputs.registryEndpoint }}
           token: ${{ secrets.TRM_TOKEN }}
           dest: ${{ inputs.dest }}
           asHost: ${{ inputs.asHost }}
