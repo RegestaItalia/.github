@@ -1,13 +1,9 @@
-name: Move to release registry
+name: Move to release
 on:
   workflow_call:
-    inputs:
-      stagingRegistryEndpoint:
-        required: true
-        type: string
 jobs:
   trmPublish:
-    name: TRM Publish (Release Registry)
+    name: TRM Set latest tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@master
@@ -21,9 +17,14 @@ jobs:
         uses: ./actions/regesta/booster/readManifest
         with:
           manifestPath: ./repo/manifest.json
-      - name: API call
-        uses: dkershner6/post-api-call-action@v2
+      - name: Add latest tag
+        uses: muhfaris/request-action@v1
         with:
-          url: ${{ inputs.stagingRegistryEndpoint }}moveToProd
+          url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
           headers: "{\"Authorization\": \"token ${{ secrets.TRM_TOKEN }}\"}"
-          params: "{\"package\": \"${{ steps.manifest.outputs.packageName }}\", \"version\": \"${{ steps.manifest.outputs.packageVersion }}\"}"
+          body: |
+            {
+              "tag": "latest",
+              "version": "${{ steps.manifest.outputs.packageVersion }}\"
+            }
+          method: PUT
