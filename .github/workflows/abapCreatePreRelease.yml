@@ -23,13 +23,6 @@ on:
         trTarget:
           required: true
           type: string
-        preRelease:
-          required: false
-          default: false
-          type: boolean
-        tags:
-          type: string
-          required: false
         devclass:
           required: true
           type: string
@@ -108,7 +101,7 @@ jobs:
           createTrkorrTarget: ${{ inputs.trTarget }}
           createTrkorrText: 'Github actions generated for deploy'
   trmPublish:
-    name: TRM Publish (Staging registry)
+    name: TRM Publish (Release candidate)
     needs: deployFioriApps
     if: always() && !failure() && !cancelled()
     runs-on: [self-hosted, Windows, RegRunner]
@@ -120,11 +113,11 @@ jobs:
       - name: Unzip checkout
         run: tar -xf checkout.zip
         shell: cmd
-      - name: TRM Publish (Staging registry)
+      - name: TRM Publish (Release candidate)
         uses: ./actions/regesta/booster/publishTrm
         with:
-          preRelease: ${{ inputs.preRelease }}
-          tags: ${{ inputs.tags }}
+          preRelease: true
+          tags: rc
           token: ${{ secrets.TRM_TOKEN }}
           devclass: ${{ inputs.devclass }}
           dest: ${{ inputs.dest }}
