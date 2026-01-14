@@ -18,7 +18,7 @@ jobs:
         with:
           manifestPath: ./repo/manifest.json
       - name: Add latest tag
-        uses: muhfaris/request-action@v1
+        uses: muhfaris/request-action@main
         with:
           url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
           headers: "{\"Authorization\": \"token ${{ secrets.TRM_TOKEN }}\"}"
@@ -28,3 +28,13 @@ jobs:
               "version": "${{ steps.manifest.outputs.packageVersion }}\"
             }
           method: PUT
+      - name: Remove rc tag
+        uses: muhfaris/request-action@main
+        with:
+          url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
+          headers: "{\"Authorization\": \"token ${{ secrets.TRM_TOKEN }}\"}"
+          body: |
+            {
+              "tag": "rc"
+            }
+          method: DELETE
