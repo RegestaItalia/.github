@@ -25,7 +25,7 @@ jobs:
           body: |
             {
               "tag": "latest",
-              "version": "${{ steps.manifest.outputs.packageVersion }}\"
+              "version": "${{ steps.manifest.outputs.packageVersion }}"
             }
           method: PUT
       - name: Remove rc tag
