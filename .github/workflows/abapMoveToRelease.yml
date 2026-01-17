@@ -36,7 +36,11 @@ jobs:
         uses: muhfaris/request-action@main
         with:
           url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
-          headers: "{\"Authorization\": \"Bearer ${{ secrets.TRM_TOKEN }}\"}"
+          headers: |
+            {
+              "Authorization": "Bearer ${{ secrets.TRM_PAT }}",
+              "Content-Type": "application/json"
+            }
           body: |
             {
               "tag": "latest",
@@ -47,7 +51,11 @@ jobs:
         uses: muhfaris/request-action@main
         with:
           url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
-          headers: "{\"Authorization\": \"Bearer ${{ secrets.TRM_TOKEN }}\"}"
+          headers: |
+            {
+              "Authorization": "Bearer ${{ secrets.TRM_PAT }}",
+              "Content-Type": "application/json"
+            }
           body: |
             {
               "tag": "rc"
