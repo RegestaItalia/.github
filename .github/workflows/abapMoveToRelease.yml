@@ -17,6 +17,21 @@ jobs:
         uses: ./actions/regesta/booster/readManifest
         with:
           manifestPath: ./repo/manifest.json
+      - name: Get package tags
+        id: get_tags
+        uses: muhfaris/request-action@main
+        with:
+          url: https://trmregistry.com/registry/package/${{ steps.manifest.outputs.packageName }}
+          headers: "{\"Authorization\": \"Bearer ${{ secrets.TRM_TOKEN }}\"}"
+          method: GET
+      - name: Save response to file
+        run: |
+          echo '${{ steps.get_tags.outputs.response-data }}' > ./package_tags.json
+      - name: Extract rc tag
+        uses: sergeysova/jq-action@v2
+        id: rc
+        with:
+          cmd: "jq '.dist_tags.rc' ./package_tags.json -r"
       - name: Add latest tag
         uses: muhfaris/request-action@main
         with:
@@ -25,7 +40,7 @@ jobs:
           body: |
             {
               "tag": "latest",
-              "version": "${{ steps.manifest.outputs.packageVersion }}"
+              "version": "${{ steps.rc.outputs.value }}"
             }
           method: PUT
       - name: Remove rc tag
