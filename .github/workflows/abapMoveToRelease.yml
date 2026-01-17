@@ -38,7 +38,7 @@ jobs:
           url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
           headers: |
             {
-              "Authorization": "Bearer ${{ secrets.TRM_PAT }}",
+              "Authorization": "Bearer ${{ secrets.TRM_TOKEN }}",
               "Content-Type": "application/json"
             }
           body: |
@@ -53,7 +53,7 @@ jobs:
           url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
           headers: |
             {
-              "Authorization": "Bearer ${{ secrets.TRM_PAT }}",
+              "Authorization": "Bearer ${{ secrets.TRM_TOKEN }}",
               "Content-Type": "application/json"
             }
           body: |
