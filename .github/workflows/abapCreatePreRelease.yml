@@ -121,7 +121,7 @@ jobs:
           createTrkorrText: 'Github actions generated for deploy'
 
   abapSrc:
-    name: Align ABAP source code to master
+    name: Align ABAP source code to ${{ inputs.abapSrcAlignBranch }}
     needs: deployFioriApps
     if: ${{ inputs.abapSrcAlign && always() && !failure() && !cancelled() }}
     runs-on: [self-hosted, Windows, RegRunner]
@@ -185,12 +185,13 @@ jobs:
             Authorization = "Basic $base64"
           }
 
+          [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+
           $uri = "${env:ENDPOINT}/sap/zregboosterwkf/src?sap-client=${env:CLIENT}&package=${env:DEVCLASS}"
 
           Invoke-WebRequest `
             -Uri $uri `
             -Headers $headers `
-            -SkipCertificateCheck `
             -OutFile "./abap/abap.zip"
 
       - name: Extract ABAP source zip
