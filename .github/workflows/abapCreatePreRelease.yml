@@ -190,10 +190,24 @@ jobs:
 
           $uri = "${env:ENDPOINT}/sap/zregboosterwkf/src?sap-client=${env:CLIENT}&package=${env:DEVCLASS}"
 
-          Invoke-WebRequest `
-            -Uri $uri `
-            -Headers $headers `
-            -OutFile "./abap/abap.zip"
+          try {
+            Invoke-WebRequest `
+              -Uri $uri `
+              -Headers $headers `
+              -OutFile "./abap/abap.zip" `
+              -UseBasicParsing
+          }
+          catch {
+            Write-Host "ERROR:"
+            Write-Host $_.Exception.Message
+          
+            if ($_.Exception.InnerException) {
+              Write-Host "INNER:"
+              Write-Host $_.Exception.InnerException.Message
+            }
+          
+            throw
+          }
 
       - name: Extract ABAP source zip
         shell: powershell
