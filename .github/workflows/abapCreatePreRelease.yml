@@ -64,6 +64,10 @@ on:
         required: false
         type: boolean
         default: false
+      abapSrcAlignBranch:
+        required: false
+        type: string
+        default: 'master'
 
 jobs:
   listFioriApps:
@@ -236,7 +240,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           directory: ./repo
-          branch: master
+          branch: ${{ inputs.abapSrcAlignBranch }}
           message: Update ABAP sources [skip ci]
           empty: true
 
