@@ -59,7 +59,7 @@ on:
       abapSrcFolder:
         required: false
         type: string
-        default: 'abap'
+        default: 'src'
       abapSrcAlign:
         required: false
         type: boolean
