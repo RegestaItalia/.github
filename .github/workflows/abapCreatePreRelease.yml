@@ -1,60 +1,70 @@
 name: Create pre-release
+
 on:
-    workflow_call:
-      inputs:
-        systemId:
-          required: true
-          type: string
-        publicApiUrl:
-          required: true
-          type: string
-        publicApiPort:
-          required: true
-          type: string
-        publicDeployPort:
-          required: true
-          type: string
-        client:
-          required: true
-          type: string
-        username:
-          required: true
-          type: string
-        trTarget:
-          required: true
-          type: string
-        devclass:
-          required: true
-          type: string
-        dest:
-          required: true
-          type: string
-        asHost:
-          required: true
-          type: string
-        sysNr:
-          required: true
-          type: string
-        sapRouter:
-          required: false
-          type: string
-        lang:
-          required: true
-          type: string
-        skipDependencies:
-          required: false
-          type: boolean
-        releaseTimeout:
-          required: false
-          type: string
-        manifestPath:
-          required: false
-          type: string
-          default: './repo/manifest.json'
-        fioriRoot:
-          required: false
-          type: string
-          default: './repo/app'
+  workflow_call:
+    inputs:
+      systemId:
+        required: true
+        type: string
+      publicApiUrl:
+        required: true
+        type: string
+      publicApiPort:
+        required: true
+        type: string
+      publicDeployPort:
+        required: true
+        type: string
+      client:
+        required: true
+        type: string
+      username:
+        required: true
+        type: string
+      trTarget:
+        required: true
+        type: string
+      devclass:
+        required: true
+        type: string
+      dest:
+        required: true
+        type: string
+      asHost:
+        required: true
+        type: string
+      sysNr:
+        required: true
+        type: string
+      sapRouter:
+        required: false
+        type: string
+      lang:
+        required: true
+        type: string
+      skipDependencies:
+        required: false
+        type: boolean
+      releaseTimeout:
+        required: false
+        type: string
+      manifestPath:
+        required: false
+        type: string
+        default: './repo/manifest.json'
+      fioriRoot:
+        required: false
+        type: string
+        default: './repo/app'
+      abapSrcFolder:
+        required: false
+        type: string
+        default: 'abap'
+      abapSrcAlign:
+        required: false
+        type: boolean
+        default: false
+
 jobs:
   listFioriApps:
     name: List Fiori apps
@@ -66,13 +76,16 @@ jobs:
         with:
           name: checkout
           path: ./
+
       - name: Unzip checkout
         run: unzip checkout.zip
+
       - name: List fiori apps
         id: listFolders
         uses: ./actions/regesta/booster/getFioriMatrix
         with:
-            appFolderPath: ${{ inputs.fioriRoot }}
+          appFolderPath: ${{ inputs.fioriRoot }}
+
   deployFioriApps:
     name: Deploy Fiori app
     needs: listFioriApps
@@ -86,9 +99,11 @@ jobs:
         with:
           name: checkout
           path: ./
+
       - name: Unzip checkout
         run: tar -xf checkout.zip
         shell: cmd
+
       - name: Deploy fiori app
         uses: ./actions/regesta/booster/deployFioriApp
         with:
@@ -100,19 +115,148 @@ jobs:
           password: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
           createTrkorrTarget: ${{ inputs.trTarget }}
           createTrkorrText: 'Github actions generated for deploy'
+
+  abapSrc:
+    name: Align ABAP source code to master
+    needs: deployFioriApps
+    if: ${{ inputs.abapSrcAlign && always() && !failure() && !cancelled() }}
+    runs-on: [self-hosted, Windows, RegRunner]
+    steps:
+      - name: Download checkout artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: checkout
+          path: ./artifact
+
+      - name: Extract checkout artifact
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (-not (Test-Path "./artifact/checkout.zip")) {
+            throw "Artifact ./artifact/checkout.zip not found"
+          }
+
+          if (Test-Path "./repo") {
+            Remove-Item "./repo" -Recurse -Force
+          }
+
+          Expand-Archive -Path "./artifact/checkout.zip" -DestinationPath "." -Force
+
+          if (-not (Test-Path "./repo")) {
+            throw "Expected ./repo after extracting checkout.zip, but it was not found"
+          }
+
+          Write-Host "Repo root content:"
+          Get-ChildItem -Force ./repo
+
+      - name: Download ABAP source zip
+        shell: powershell
+        env:
+          USER: ${{ inputs.username }}
+          PASS: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
+          ENDPOINT: ${{ inputs.publicApiUrl }}:${{ inputs.publicApiPort }}
+          CLIENT: ${{ inputs.client }}
+          DEVCLASS: ${{ inputs.devclass }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (-not $env:ENDPOINT) { throw "ENDPOINT is empty" }
+          if (-not $env:USER) { throw "USER is empty" }
+          if (-not $env:PASS) { throw "PASS is empty" }
+          if (-not $env:CLIENT) { throw "CLIENT is empty" }
+          if (-not $env:DEVCLASS) { throw "DEVCLASS is empty" }
+
+          if (Test-Path "./abap") {
+            Remove-Item "./abap" -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path "./abap" -Force | Out-Null
+
+          $pair = "$env:USER`:$env:PASS"
+          $bytes = [System.Text.Encoding]::ASCII.GetBytes($pair)
+          $base64 = [Convert]::ToBase64String($bytes)
+
+          $headers = @{
+            Authorization = "Basic $base64"
+          }
+
+          $uri = "${env:ENDPOINT}/sap/zregboosterwkf/src?sap-client=${env:CLIENT}&package=${env:DEVCLASS}"
+
+          Invoke-WebRequest `
+            -Uri $uri `
+            -Headers $headers `
+            -OutFile "./abap/abap.zip"
+
+      - name: Extract ABAP source zip
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          Expand-Archive -Path "./abap/abap.zip" -DestinationPath "./abap/extracted" -Force
+          Remove-Item "./abap/abap.zip" -Force
+
+          if (-not (Test-Path "./abap/extracted/src")) {
+            throw "Expected ./abap/extracted/src after extracting ABAP source zip, but it was not found"
+          }
+
+          Get-ChildItem -Force ./abap/extracted
+          Get-ChildItem -Force ./abap/extracted/src
+
+      - name: Replace repo ABAP sources
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $abapSrcFolder = "${{ inputs.abapSrcFolder }}"
+          $repoAbapPath = "./repo/$abapSrcFolder"
+
+          if (-not $abapSrcFolder) {
+            throw "abapSrcFolder input is empty"
+          }
+
+          if (-not (Test-Path "./repo")) {
+            throw "Repo directory ./repo not found"
+          }
+
+          if (Test-Path "$repoAbapPath/src") {
+            Remove-Item "$repoAbapPath/src" -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path "$repoAbapPath" -Force | Out-Null
+
+          Move-Item "./abap/extracted/src" "$repoAbapPath/src" -Force
+
+          Write-Host "Final repo ABAP source content:"
+          Get-ChildItem -Force "$repoAbapPath"
+          Get-ChildItem -Force "$repoAbapPath/src" | Select-Object -First 20
+
+      - name: Commit & Push changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          directory: ./repo
+          branch: master
+          message: Update ABAP sources [skip ci]
+          empty: true
+
   trmPublish:
     name: TRM Publish (Release candidate)
-    needs: deployFioriApps
-    if: always() && !failure() && !cancelled()
+    needs:
+      - deployFioriApps
+      - abapSrc
+    if: ${{ always() && !failure() && !cancelled() && (!inputs.abapSrcAlign || needs.abapSrc.result == 'success') }}
     runs-on: [self-hosted, Windows, RegRunner]
     steps:
       - uses: actions/download-artifact@master
         with:
           name: checkout
           path: ./
+
       - name: Unzip checkout
         run: tar -xf checkout.zip
         shell: cmd
+
       - name: TRM Publish (Release candidate)
         uses: ./actions/regesta/booster/publishTrm
         with:
@@ -132,18 +276,21 @@ jobs:
           manifestPath: ${{ inputs.manifestPath }}
           skipDependencies: ${{ inputs.skipDependencies }}
           releaseTimeout: ${{ inputs.releaseTimeout }}
+
   createPreRelease:
     name: Create Github pre-release
     runs-on: ubuntu-latest
     needs: trmPublish
-    if: always() && !failure() && !cancelled()
+    if: ${{ always() && !failure() && !cancelled() }}
     steps:
       - uses: actions/download-artifact@master
         with:
           name: checkout
           path: ./
+
       - name: Unzip checkout
         run: unzip checkout.zip
+
       - name: Create pre-release
         uses: ./actions/regesta/booster/createPreRelease
         id: createPreRelease
