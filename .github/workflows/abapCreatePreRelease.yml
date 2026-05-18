@@ -185,6 +185,7 @@ jobs:
             Authorization = "Basic $base64"
           }
 
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 
           $uri = "${env:ENDPOINT}/sap/zregboosterwkf/src?sap-client=${env:CLIENT}&package=${env:DEVCLASS}"
