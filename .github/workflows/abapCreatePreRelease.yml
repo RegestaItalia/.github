@@ -190,6 +190,7 @@ jobs:
           Invoke-WebRequest `
             -Uri $uri `
             -Headers $headers `
+            -SkipCertificateCheck `
             -OutFile "./abap/abap.zip"
 
       - name: Extract ABAP source zip
