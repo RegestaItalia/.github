@@ -232,7 +232,38 @@ jobs:
           New-Item -ItemType Directory -Path $repoAbapPath -Force | Out-Null
       
           Copy-Item "./abap/extracted/src/*" $repoAbapPath -Recurse -Force
-
+          
+      - name: Fix repo origin auth
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+      
+          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
+            throw "CI_GITHUB_TOKEN is empty"
+          }
+      
+          cd ./repo
+      
+          $origin = git remote get-url origin
+          Write-Host "Origin before auth: $origin"
+      
+          $origin = $origin.TrimEnd("/")
+          if ($origin -notmatch "\.git$") {
+            $origin = "$origin.git"
+          }
+      
+          if ($origin -notmatch "^https://github.com/") {
+            throw "Unsupported origin URL: $origin"
+          }
+      
+          $authOrigin = $origin -replace "^https://github.com/", "https://x-access-token:$env:GH_TOKEN@github.com/"
+      
+          git remote set-url origin $authOrigin
+      
+          Write-Host "Origin auth configured"
+          
       - name: Commit & Push changes
         uses: actions-js/push@master
         with:
