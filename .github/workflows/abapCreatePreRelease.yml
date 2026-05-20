@@ -166,11 +166,6 @@ jobs:
         run: |
           set -euo pipefail
       
-          if [ -z "${PUBLIC_API_URL:-}" ]; then
-            echo "PUBLIC_API_URL is empty"
-            exit 1
-          fi
-      
           ENDPOINT="${PUBLIC_API_URL%/}"
       
           if [ -n "${PUBLIC_API_PORT:-}" ]; then
@@ -179,15 +174,27 @@ jobs:
       
           URI="${ENDPOINT}/sap/zregboosterwkf/src?sap-client=${CLIENT}&package=${DEVCLASS}"
       
-          echo "URI: $URI"
-      
           rm -rf ./abap
           mkdir -p ./abap
       
-          curl -k -L \
+          echo "Trying URI: $URI"
+      
+          if ! curl -k -L --http1.1 --ssl-no-revoke \
             -u "${USER}:${PASS}" \
             "$URI" \
-            --output "./abap/abap.zip"
+            --output "./abap/abap.zip"; then
+      
+            echo "HTTPS failed. Retrying with HTTP..."
+      
+            URI_HTTP="${URI/https:\/\//http://}"
+      
+            echo "Trying URI: $URI_HTTP"
+      
+            curl -L --http1.1 \
+              -u "${USER}:${PASS}" \
+              "$URI_HTTP" \
+              --output "./abap/abap.zip"
+          fi
 
       - name: Extract ABAP source zip
         shell: powershell
