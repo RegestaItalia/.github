@@ -260,17 +260,12 @@ jobs:
       
           git commit -m "Update ABAP sources [skip ci]"
       
-          $repoUrl = "https://github.com/$env:REPOSITORY.git"
+          $authUrl = "https://x-access-token:$($env:GH_TOKEN)@github.com/$($env:REPOSITORY).git"
       
-          $basic = [Convert]::ToBase64String(
-            [Text.Encoding]::ASCII.GetBytes("x-access-token:$env:GH_TOKEN")
-          )
+          git remote remove origin 2>$null
+          git remote add origin $authUrl
       
-          git `
-            -c credential.helper= `
-            -c credential.useHttpPath=true `
-            -c http.extraheader="AUTHORIZATION: Basic $basic" `
-            push $repoUrl "HEAD:$env:BRANCH"
+          git push origin "HEAD:$($env:BRANCH)"
          
   trmPublish:
     name: TRM Publish (Release candidate)
