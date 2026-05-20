@@ -233,20 +233,41 @@ jobs:
       
           Copy-Item "./abap/extracted/src/*" $repoAbapPath -Recurse -Force
           
-      - name: Commit & Push changes
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          path: targetrepo
+          ref: ${{ inputs.abapSrcAlignBranch }}
+      
+      - name: Replace ABAP sources
         shell: powershell
         env:
-          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
-          BRANCH: ${{ inputs.abapSrcAlignBranch }}
-          REPOSITORY: ${{ github.repository }}
+          ABAP_SRC_FOLDER: ${{ inputs.abapSrcFolder }}
         run: |
           $ErrorActionPreference = "Stop"
       
-          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
-            throw "CI_GITHUB_TOKEN is empty"
+          $abapSrcFolder = $env:ABAP_SRC_FOLDER
+          if ([string]::IsNullOrWhiteSpace($abapSrcFolder)) {
+            $abapSrcFolder = "src"
           }
       
-          cd ./repo
+          $repoAbapPath = "./targetrepo/$abapSrcFolder"
+      
+          if (Test-Path $repoAbapPath) {
+            Remove-Item $repoAbapPath -Recurse -Force
+          }
+      
+          New-Item -ItemType Directory -Path $repoAbapPath -Force | Out-Null
+      
+          Copy-Item "./abap/extracted/src/*" $repoAbapPath -Recurse -Force
+      
+      - name: Commit & Push changes
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+      
+          cd ./targetrepo
       
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -259,13 +280,7 @@ jobs:
           }
       
           git commit -m "Update ABAP sources [skip ci]"
-      
-          $authUrl = "https://x-access-token:$($env:GH_TOKEN)@github.com/$($env:REPOSITORY).git"
-      
-          git remote remove origin 2>$null
-          git remote add origin $authUrl
-      
-          git push origin "HEAD:$($env:BRANCH)"
+          git push
          
   trmPublish:
     name: TRM Publish (Release candidate)
