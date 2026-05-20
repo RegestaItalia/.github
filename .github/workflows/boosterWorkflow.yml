@@ -165,7 +165,6 @@ jobs:
       sysNr: ${{ needs.getSapSourceSystem.outputs.sysNr }}
       sapRouter: ${{ needs.getSapSourceSystem.outputs.sapRouter }}
       skipDependencies: ${{ fromJson(inputs.vars).SKIP_DEPENDENCIES == 'true' }}
-      releaseTimeout: ${{ fromJson(inputs.vars).RELEASE_TMS_TIMEOUT }}
       lang: ${{ needs.getSapSourceSystem.outputs.lang }}
       abapSrcFolder: ${{ fromJson(inputs.vars).ABAP_SRC_FOLDER }}
       abapSrcAlign: ${{ fromJson(inputs.vars).ABAP_SRC_ALIGN == 'true' }}
