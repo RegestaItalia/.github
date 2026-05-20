@@ -155,59 +155,56 @@ jobs:
           Get-ChildItem -Force ./repo
 
       - name: Download ABAP source zip
-        shell: powershell
+        shell: pwsh
         env:
           USER: ${{ inputs.username }}
           PASS: ${{ secrets[format('{0}_PASSWORD', inputs.systemId)] }}
-          ENDPOINT: ${{ inputs.publicApiUrl }}:${{ inputs.publicApiPort }}
+          PUBLIC_API_URL: ${{ inputs.publicApiUrl }}
+          PUBLIC_API_PORT: ${{ inputs.publicApiPort }}
           CLIENT: ${{ inputs.client }}
           DEVCLASS: ${{ inputs.devclass }}
         run: |
           $ErrorActionPreference = "Stop"
-
-          if (-not $env:ENDPOINT) { throw "ENDPOINT is empty" }
+      
+          if (-not $env:PUBLIC_API_URL) { throw "PUBLIC_API_URL is empty" }
           if (-not $env:USER) { throw "USER is empty" }
           if (-not $env:PASS) { throw "PASS is empty" }
           if (-not $env:CLIENT) { throw "CLIENT is empty" }
           if (-not $env:DEVCLASS) { throw "DEVCLASS is empty" }
-
+      
+          $endpoint = $env:PUBLIC_API_URL.TrimEnd("/")
+      
+          if ($env:PUBLIC_API_PORT) {
+            $endpoint = "${endpoint}:$env:PUBLIC_API_PORT"
+          }
+      
+          if ($endpoint -notmatch '^https?://') {
+            throw "ENDPOINT must start with http:// or https://. Current: $endpoint"
+          }
+      
           if (Test-Path "./abap") {
             Remove-Item "./abap" -Recurse -Force
           }
-
+      
           New-Item -ItemType Directory -Path "./abap" -Force | Out-Null
-
+      
           $pair = "$env:USER`:$env:PASS"
           $bytes = [System.Text.Encoding]::ASCII.GetBytes($pair)
           $base64 = [Convert]::ToBase64String($bytes)
-
+      
           $headers = @{
             Authorization = "Basic $base64"
           }
-
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-
-          $uri = "${env:ENDPOINT}/sap/zregboosterwkf/src?sap-client=${env:CLIENT}&package=${env:DEVCLASS}"
-
-          try {
-            Invoke-WebRequest `
-              -Uri $uri `
-              -Headers $headers `
-              -OutFile "./abap/abap.zip" `
-              -UseBasicParsing
-          }
-          catch {
-            Write-Host "ERROR:"
-            Write-Host $_.Exception.Message
-          
-            if ($_.Exception.InnerException) {
-              Write-Host "INNER:"
-              Write-Host $_.Exception.InnerException.Message
-            }
-          
-            throw
-          }
+      
+          $uri = "${endpoint}/sap/zregboosterwkf/src?sap-client=${env:CLIENT}&package=${env:DEVCLASS}"
+      
+          Write-Host "URI: $uri"
+      
+          Invoke-WebRequest `
+            -Uri $uri `
+            -Headers $headers `
+            -OutFile "./abap/abap.zip" `
+            -SkipCertificateCheck
 
       - name: Extract ABAP source zip
         shell: powershell
