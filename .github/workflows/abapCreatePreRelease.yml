@@ -219,26 +219,19 @@ jobs:
           $ErrorActionPreference = "Stop"
       
           $abapSrcFolder = $env:ABAP_SRC_FOLDER
-      
           if ([string]::IsNullOrWhiteSpace($abapSrcFolder)) {
             $abapSrcFolder = "src"
           }
       
           $repoAbapPath = "./repo/$abapSrcFolder"
       
-          if (-not (Test-Path "./repo")) {
-            throw "Repo directory ./repo not found"
+          if (Test-Path $repoAbapPath) {
+            Remove-Item $repoAbapPath -Recurse -Force
           }
       
-          if (Test-Path "$repoAbapPath/src") {
-            Remove-Item "$repoAbapPath/src" -Recurse -Force
-          }
+          New-Item -ItemType Directory -Path $repoAbapPath -Force | Out-Null
       
-          New-Item -ItemType Directory -Path "$repoAbapPath" -Force | Out-Null
-      
-          Move-Item "./abap/extracted/src" "$repoAbapPath/src" -Force
-      
-          Write-Host "Using abapSrcFolder: $abapSrcFolder"
+          Copy-Item "./abap/extracted/src/*" $repoAbapPath -Recurse -Force
 
       - name: Commit & Push changes
         shell: powershell
@@ -255,8 +248,7 @@ jobs:
       
           git add .
       
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) {
+          if ((git status --porcelain).Length -eq 0) {
             Write-Host "No ABAP source changes to commit."
             exit 0
           }
@@ -266,15 +258,14 @@ jobs:
           $origin = git remote get-url origin
           Write-Host "Origin before auth: $origin"
       
-          if ($origin -match "^https://github.com/(.+)$") {
-            $authOrigin = "https://x-access-token:$env:GH_TOKEN@github.com/$($Matches[1])"
-          }
-          else {
-            throw "Unsupported origin URL: $origin"
+          $origin = $origin.TrimEnd("/")
+          if ($origin -notmatch "\.git$") {
+            $origin = "$origin.git"
           }
       
-          git remote set-url origin $authOrigin
-          git push origin "HEAD:$env:BRANCH"
+          $authOrigin = $origin -replace "^https://github.com/", "https://x-access-token:$env:GH_TOKEN@github.com/"
+      
+          git -c credential.helper= push $authOrigin "HEAD:$env:BRANCH"
 
   trmPublish:
     name: TRM Publish (Release candidate)
