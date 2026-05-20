@@ -213,31 +213,32 @@ jobs:
 
       - name: Replace repo ABAP sources
         shell: powershell
+        env:
+          ABAP_SRC_FOLDER: ${{ inputs.abapSrcFolder }}
         run: |
           $ErrorActionPreference = "Stop"
-
-          $abapSrcFolder = "${{ inputs.abapSrcFolder }}"
-          $repoAbapPath = "./repo/$abapSrcFolder"
-
-          if (-not $abapSrcFolder) {
-            throw "abapSrcFolder input is empty"
+      
+          $abapSrcFolder = $env:ABAP_SRC_FOLDER
+      
+          if ([string]::IsNullOrWhiteSpace($abapSrcFolder)) {
+            $abapSrcFolder = "src"
           }
-
+      
+          $repoAbapPath = "./repo/$abapSrcFolder"
+      
           if (-not (Test-Path "./repo")) {
             throw "Repo directory ./repo not found"
           }
-
+      
           if (Test-Path "$repoAbapPath/src") {
             Remove-Item "$repoAbapPath/src" -Recurse -Force
           }
-
+      
           New-Item -ItemType Directory -Path "$repoAbapPath" -Force | Out-Null
-
+      
           Move-Item "./abap/extracted/src" "$repoAbapPath/src" -Force
-
-          Write-Host "Final repo ABAP source content:"
-          Get-ChildItem -Force "$repoAbapPath"
-          Get-ChildItem -Force "$repoAbapPath/src" | Select-Object -First 20
+      
+          Write-Host "Using abapSrcFolder: $abapSrcFolder"
 
       - name: Commit & Push changes
         uses: actions-js/push@master
