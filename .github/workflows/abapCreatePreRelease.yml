@@ -234,39 +234,14 @@ jobs:
           Copy-Item "./abap/extracted/src/*" $repoAbapPath -Recurse -Force
 
       - name: Commit & Push changes
-        shell: powershell
-        env:
-          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
-          BRANCH: ${{ inputs.abapSrcAlignBranch }}
-        run: |
-          $ErrorActionPreference = "Stop"
-      
-          cd ./repo
-      
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      
-          git add .
-      
-          if ((git status --porcelain).Length -eq 0) {
-            Write-Host "No ABAP source changes to commit."
-            exit 0
-          }
-      
-          git commit -m "Update ABAP sources [skip ci]"
-      
-          $origin = git remote get-url origin
-          Write-Host "Origin before auth: $origin"
-      
-          $origin = $origin.TrimEnd("/")
-          if ($origin -notmatch "\.git$") {
-            $origin = "$origin.git"
-          }
-      
-          $authOrigin = $origin -replace "^https://github.com/", "https://x-access-token:$env:GH_TOKEN@github.com/"
-      
-          git -c credential.helper= push $authOrigin "HEAD:$env:BRANCH"
-
+        uses: actions-js/push@master
+        with:
+          github_token:  ${{ secrets.CI_GITHUB_TOKEN }}
+          directory: ./repo
+          branch: ${{ inputs.abapSrcAlignBranch }}
+          message: Update ABAP sources [skip ci]
+          empty: true
+         
   trmPublish:
     name: TRM Publish (Release candidate)
     needs:
