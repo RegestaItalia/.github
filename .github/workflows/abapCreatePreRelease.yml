@@ -45,9 +45,6 @@ on:
       skipDependencies:
         required: false
         type: boolean
-      releaseTimeout:
-        required: false
-        type: string
       manifestPath:
         required: false
         type: string
