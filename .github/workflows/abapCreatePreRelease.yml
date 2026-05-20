@@ -241,13 +241,40 @@ jobs:
           Write-Host "Using abapSrcFolder: $abapSrcFolder"
 
       - name: Commit & Push changes
-        uses: actions-js/push@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          directory: ./repo
-          branch: ${{ inputs.abapSrcAlignBranch }}
-          message: Update ABAP sources [skip ci]
-          empty: true
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ inputs.abapSrcAlignBranch }}
+        run: |
+          $ErrorActionPreference = "Stop"
+      
+          cd ./repo
+      
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      
+          git add .
+      
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "No ABAP source changes to commit."
+            exit 0
+          }
+      
+          git commit -m "Update ABAP sources [skip ci]"
+      
+          $origin = git remote get-url origin
+          Write-Host "Origin before auth: $origin"
+      
+          if ($origin -match "^https://github.com/(.+)$") {
+            $authOrigin = "https://x-access-token:$env:GH_TOKEN@github.com/$($Matches[1])"
+          }
+          else {
+            throw "Unsupported origin URL: $origin"
+          }
+      
+          git remote set-url origin $authOrigin
+          git push origin "HEAD:$env:BRANCH"
 
   trmPublish:
     name: TRM Publish (Release candidate)
