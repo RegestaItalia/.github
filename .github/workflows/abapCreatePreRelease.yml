@@ -314,7 +314,6 @@ jobs:
           trTarget: ${{ inputs.trTarget }}
           manifestPath: ${{ inputs.manifestPath }}
           skipDependencies: ${{ inputs.skipDependencies }}
-          releaseTimeout: ${{ inputs.releaseTimeout }}
 
   createPreRelease:
     name: Create Github pre-release
