@@ -1,10 +1,18 @@
 name: Move to release
 on:
   workflow_call:
+    inputs:
+      manifestPath:
+        required: false
+        type: string
+        default: ./repo/manifest.json
 jobs:
   trmPublish:
     name: TRM Set latest tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/download-artifact@master
         with:
@@ -12,52 +20,38 @@ jobs:
           path: ./
       - name: Unzip checkout
         run: unzip checkout.zip
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install TRM client
+        run: npm install --global "trm-client@>=13.3.0"
       - name: Read manifest
         id: manifest
         uses: ./actions/regesta/booster/readManifest
         with:
-          manifestPath: ./repo/manifest.json
-      - name: Get package tags
-        id: get_tags
-        uses: muhfaris/request-action@main
-        with:
-          url: https://trmregistry.com/registry/package/${{ steps.manifest.outputs.packageName }}
-          headers: "{\"Authorization\": \"Bearer ${{ secrets.TRM_TOKEN }}\"}"
-          method: GET
-      - name: Save response to file
+          manifestPath: ${{ inputs.manifestPath }}
+      - name: Move rc tag to latest
+        shell: bash
+        env:
+          PACKAGE_NAME: ${{ steps.manifest.outputs.packageName }}
         run: |
-          echo '${{ steps.get_tags.outputs.response-data }}' > ./package_tags.json
-      - name: Extract rc tag
-        uses: sergeysova/jq-action@v2
-        id: rc
-        with:
-          cmd: "jq '.dist_tags.rc' ./package_tags.json -r"
-      - name: Add latest tag
-        uses: muhfaris/request-action@main
-        with:
-          url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
-          headers: |
-            {
-              "Authorization": "Bearer ${{ secrets.TRM_TOKEN }}",
-              "Content-Type": "application/json"
-            }
-          body: |
-            {
-              "tag": "latest",
-              "version": "${{ steps.rc.outputs.value }}"
-            }
-          method: PUT
-      - name: Remove rc tag
-        uses: muhfaris/request-action@main
-        with:
-          url: https://trmregistry.com/registry/package/tag/${{ steps.manifest.outputs.packageName }}
-          headers: |
-            {
-              "Authorization": "Bearer ${{ secrets.TRM_TOKEN }}",
-              "Content-Type": "application/json"
-            }
-          body: |
-            {
-              "tag": "rc"
-            }
-          method: DELETE
+          set -euo pipefail
+
+          mkdir -p "$HOME/.local/share/trm"
+
+          VIEW="$(trm view "$PACKAGE_NAME" --connection-type none --logger JSON)" || {
+            echo "$VIEW" | jq -r '.logs[]? | "\(.type): \(.text)"'
+            exit 1
+          }
+          RC_VERSION="$(echo "$VIEW" | jq -r '.data.distTags.rc // empty')"
+
+          if [ -z "$RC_VERSION" ]; then
+            echo "::notice::No rc tag found for $PACKAGE_NAME; nothing to promote."
+            exit 0
+          fi
+
+          trm dist-tag add "$PACKAGE_NAME" "$RC_VERSION" latest
+          trm dist-tag rm "$PACKAGE_NAME" rc
+
+          echo "### TRM: $PACKAGE_NAME $RC_VERSION -> latest" >> "$GITHUB_STEP_SUMMARY"
