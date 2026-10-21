@@ -26,6 +26,10 @@ jobs:
           node-version: 22
       - name: Install TRM client
         run: npm install --global "trm-client@>=13.3.0"
+      - name: Verify TRM GitHub OIDC account
+        uses: ./actions/regesta/booster/trmWhoAmI
+        with:
+          installClient: 'false'
       - name: Read manifest
         id: manifest
         uses: ./actions/regesta/booster/readManifest
