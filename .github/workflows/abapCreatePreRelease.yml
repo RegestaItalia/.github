@@ -336,3 +336,4 @@ jobs:
         id: createPreRelease
         with:
           manifestPath: ${{ inputs.manifestPath }}
+          githubToken: ${{ secrets.CI_GITHUB_TOKEN }}
